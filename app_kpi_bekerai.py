@@ -95,21 +95,20 @@ st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 # 2. CONEXIÓN Y CARGA EN VIVO DESDE GOOGLE DRIVE
 # ==========================================
 
-# ⚠️ REEMPLAZA ESTE ID CON EL ID DE TU GOOGLE SHEET
-# El ID se encuentra en la URL de tu hoja: https://docs.google.com/spreadsheets/d/TU_ID_AQUI/edit
-GOOGLE_SHEET_ID = "REEMPLAZAR_POR_TU_ID_DE_GOOGLE_SHEETS"
+# ID extraído de tu enlace de Google Drive
+GOOGLE_SHEET_ID = "1xtRenOS7WgWdTcLBWRMUnN_To6irzyKS"
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=csv"
 
-@st.cache_data(ttl=300)  # Auto-refresco cada 5 minutos (300 segundos)
+@st.cache_data(ttl=300)  # Auto-refresco automático cada 5 minutos
 def load_data_from_drive():
     try:
         # Lectura directa del CSV generado por Google Drive
         df_raw = pd.read_csv(SHEET_URL)
-    except Exception as e:
-        # Fallback de lectura si falla el formato directo
+    except Exception:
+        # Fallback de lectura si existen inconsistencias de formato
         df_raw = pd.read_csv(SHEET_URL, on_bad_lines='skip')
     
-    # Convierte todo a líneas de texto para el parser
+    # Convierte a matriz de cadenas para el procesamiento
     lines = df_raw.astype(str).values.tolist()
     
     weeks = [f"Sem {i:02d}" for i in range(1, 31)]
@@ -128,7 +127,7 @@ def load_data_from_drive():
                 v_clean = re.sub(r'[^\d.-]', '', v)
                 try:
                     clean_vals.append(float(v_clean) if v_clean != '' else 0.0)
-                except:
+                except Exception:
                     clean_vals.append(0.0)
             
             for wk, val in zip(weeks, clean_vals):
@@ -187,7 +186,7 @@ if st.sidebar.button("🔄 Actualizar Datos de Drive Ahora"):
 try:
     df_kpis, df_tasks = load_data_from_drive()
 except Exception as e:
-    st.error(f"⚠️ Asegúrate de colocar el ID correcto de tu Google Sheet y dar acceso de lectura. Detalles del error: {e}")
+    st.error(f"⚠️ Error al conectar con Google Sheets. Verifica que el archivo tenga acceso de lectura pública. Detalles: {e}")
     st.stop()
 
 # ==========================================
