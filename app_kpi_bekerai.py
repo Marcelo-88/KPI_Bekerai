@@ -32,6 +32,7 @@ FRIDOLIN_CSS = """
     .main-header p { color: #E6C894 !important; margin-top: 5px; margin-bottom: 0; font-size: 0.95rem; }
     section[data-testid="stSidebar"] { background-color: #EFECE4 !important; border-right: 1px solid #DFD9CE; }
     
+    /* ESTILOS KPIS */
     .kpi-card {
         background-color: #FFFFFF; border: 1px solid #E6E1D7; border-radius: 16px;
         padding: 1.1rem; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04); margin-bottom: 1rem;
@@ -51,9 +52,40 @@ FRIDOLIN_CSS = """
     .badge-warning { color: #D35400; font-weight: 700; background: #FDEBD0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
     .kpi-resp-tag { font-size: 0.75rem; color: #A07828; font-weight: 600; margin-bottom: 0.3rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
+
+    /* ESTILOS TAREAS TARJETAS */
+    .task-card {
+        background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 14px;
+        padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 3px 6px rgba(0,0,0,0.03);
+        border-left: 6px solid #7A1C29; transition: transform 0.2s ease;
+    }
+    .task-card-pendiente { border-left-color: #E74C3C; }
+    .task-card-proceso { border-left-color: #F39C12; }
+    .task-card-finalizado { border-left-color: #27AE60; }
+    
+    .task-title { font-size: 1rem; font-weight: 700; color: #2D2B2A; margin-bottom: 0.5rem; }
+    .task-badge {
+        display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.75rem;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .badge-status-pendiente { background-color: #FDEDEC; color: #C0392B; }
+    .badge-status-proceso { background-color: #FEF9E7; color: #D68910; }
+    .badge-status-finalizado { background-color: #E8F8F5; color: #1E8449; }
+    .badge-dept { background-color: #EAECEE; color: #424949; font-weight: 600; margin-left: 6px; }
+
+    .task-meta { font-size: 0.83rem; color: #5D6D7E; margin-top: 0.6rem; display: flex; flex-wrap: wrap; gap: 12px; }
+    .task-meta-item { display: flex; align-items: center; gap: 4px; }
+    
+    /* TARJETA RESUMEN RESPONSABLE */
+    .resp-summary-card {
+        background-color: #FFFFFF; border: 1px solid #E5E0D8; border-radius: 12px;
+        padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .resp-summary-name { font-weight: 700; font-size: 1rem; color: #7A1C29; margin-bottom: 0.6rem; border-bottom: 1px solid #F0ECE3; padding-bottom: 0.3rem; }
+    .resp-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 0.8rem; }
+    .resp-stat-num { font-weight: 800; font-size: 1.1rem; }
 </style>
-"""
-st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ==========================================
 # 2. CARGA Y PARSEO DE DATOS DE GOOGLE SHEETS
@@ -119,7 +151,6 @@ def load_data():
             df_kpi_long = df_kpi_long[df_kpi_long['Medible'].notna() & (df_kpi_long['Medible'] != 'nan')]
             df_kpi_long['Medible'] = df_kpi_long['Medible'].astype(str).str.strip()
             
-            # Corrección de cruce accidental de filas en Sem 30
             mask_swap = (df_kpi_long['Medible'] == 'Envio Salados') & (df_kpi_long['Valor'] > 20000)
             if mask_swap.any():
                 df_kpi_long.loc[mask_swap, 'Medible'] = 'Prod Salado'
@@ -143,8 +174,14 @@ def load_data():
             df_tasks = df_tareas_raw.iloc[h_idx_t + 1:].copy()
             df_tasks.columns = [str(c).strip() for c in df_tareas_raw.iloc[h_idx_t].values]
             df_tasks = df_tasks.dropna(how='all')
-            df_tasks['Estado'] = df_tasks['Estado'].fillna('Pendiente')
-            df_tasks['Responsable Principal'] = df_tasks['Responsable Principal'].fillna('Por Asignar')
+            
+            # Limpieza básica de columnas
+            df_tasks['TAREA'] = df_tasks['TAREA'].astype(str).str.strip()
+            df_tasks = df_tasks[df_tasks['TAREA'].notna() & (df_tasks['TAREA'] != 'nan') & (df_tasks['TAREA'] != '')]
+            
+            df_tasks['Estado'] = df_tasks['Estado'].fillna('Pendiente').astype(str).str.strip()
+            df_tasks['Responsable Principal'] = df_tasks['Responsable Principal'].fillna('Sin Asignar').astype(str).str.strip()
+            df_tasks['Departamento'] = df_tasks['Departamento'].fillna('General').astype(str).str.strip()
         else:
             df_tasks = df_tareas_raw
     else:
@@ -168,7 +205,6 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         fig.update_layout(height=height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF')
         return fig
 
-    # Usar Eje Y Secundario para volúmenes masivos (>15.000 como Prod Salado)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     for idx, kpi in enumerate(existing_kpis):
@@ -304,7 +340,6 @@ if menu_option == "📊 Dashboards KPIs":
                 actual_data_week = selected_week
                 is_fallback = False
                 
-                # Búsqueda hacia atrás por si la semana seleccionada no tiene dato
                 for w_idx in range(current_week_idx, -1, -1):
                     w_name = semanas_unicas[w_idx]
                     row_w = df_kpi_series[df_kpi_series['Semana'] == w_name]
@@ -376,7 +411,7 @@ if menu_option == "📊 Dashboards KPIs":
                     st.markdown(html_code, unsafe_allow_html=True)
 
 # ------------------------------------------
-# MÓDULO 2: COMPARADOR KPI vs KPI (TODAS LAS GRÁFICAS CON MAXIMIZAR)
+# MÓDULO 2: COMPARADOR KPI vs KPI
 # ------------------------------------------
 elif menu_option == "🔀 Comparador KPI vs KPI":
     st.subheader("🔀 Análisis Comparativo Multi-KPI")
@@ -436,12 +471,165 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     show_full_graph_dialog(df_kpis, selected_custom, "Selección Libre Personalizada", unit_label="Valores")
 
 # ------------------------------------------
-# MÓDULO 3: GESTIÓN DE TAREAS
+# MÓDULO 3: GESTIÓN DE TAREAS (REDiseño TARJETAS KANBAN + RESUMEN)
 # ------------------------------------------
 elif menu_option == "📝 Gestión de Tareas":
-    st.subheader("📝 Lista de Tareas y Operaciones EOS")
+    st.subheader("📝 Gestión de Tareas y Operaciones EOS")
+    
     if not df_tasks.empty:
-        st.dataframe(df_tasks, use_container_width=True, hide_index=True)
+        # --- FILTROS ---
+        f_col1, f_col2, f_col3 = st.columns(3)
+        
+        # Filtro Estados
+        estados_disponibles = sorted(list(df_tasks['Estado'].unique()))
+        with f_col1:
+            sel_estados = st.multiselect("📌 Filtrar por Estado:", estados_disponibles, default=estados_disponibles)
+            
+        # Filtro Departamento
+        deptos_disponibles = sorted(list(df_tasks['Departamento'].unique()))
+        with f_col2:
+            sel_deptos = st.multiselect("🏢 Filtrar por Departamento:", deptos_disponibles, default=deptos_disponibles)
+            
+        # Filtro Responsable (Incluye Responsable 1, 2 o 3)
+        all_resps = set(df_tasks['Responsable Principal'].dropna().tolist())
+        if 'Responsable 2' in df_tasks.columns:
+            all_resps.update(df_tasks['Responsable 2'].dropna().tolist())
+        if 'Responsable 3' in df_tasks.columns:
+            all_resps.update(df_tasks['Responsable 3'].dropna().tolist())
+        
+        all_resps_list = sorted([r for r in all_resps if str(r) != 'nan' and str(r).strip() != 'None' and str(r).strip() != ''])
+        
+        with f_col3:
+            sel_resps = st.multiselect("👤 Filtrar por Responsable:", all_resps_list, default=[])
+
+        # --- APLICACIÓN DE FILTROS ---
+        df_filtered = df_tasks.copy()
+        
+        if sel_estados:
+            df_filtered = df_filtered[df_filtered['Estado'].isin(sel_estados)]
+        if sel_deptos:
+            df_filtered = df_filtered[df_filtered['Departamento'].isin(sel_deptos)]
+        if sel_resps:
+            mask_r1 = df_filtered['Responsable Principal'].isin(sel_resps)
+            mask_r2 = df_filtered['Responsable 2'].isin(sel_resps) if 'Responsable 2' in df_filtered.columns else False
+            mask_r3 = df_filtered['Responsable 3'].isin(sel_resps) if 'Responsable 3' in df_filtered.columns else False
+            df_filtered = df_filtered[mask_r1 | mask_r2 | mask_r3]
+
+        st.markdown(f"Showing **{len(df_filtered)}** of **{len(df_tasks)}** total tasks.")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- MOSTRAR TARJETAS ---
+        if not df_filtered.empty:
+            for _, row in df_filtered.iterrows():
+                estado = str(row.get('Estado', 'Pendiente')).strip()
+                estado_clean = estado.lower().replace(' ', '')
+                
+                if 'finaliz' in estado_clean or 'complet' in estado_clean:
+                    card_class = "task-card-finalizado"
+                    badge_class = "badge-status-finalizado"
+                    badge_icon = "🟢"
+                elif 'proceso' in estado_clean:
+                    card_class = "task-card-proceso"
+                    badge_class = "badge-status-proceso"
+                    badge_icon = "🟡"
+                else:
+                    card_class = "task-card-pendiente"
+                    badge_class = "badge-status-pendiente"
+                    badge_icon = "🔴"
+
+                # Responsables auxiliares
+                r2 = str(row.get('Responsable 2', '')).strip()
+                r3 = str(row.get('Responsable 3', '')).strip()
+                equipo_str = f"<b>{row['Responsable Principal']}</b>"
+                if r2 and r2 != 'None' and r2 != 'nan':
+                    equipo_str += f", {r2}"
+                if r3 and r3 != 'None' and r3 != 'nan':
+                    equipo_str += f", {r3}"
+
+                # Fechas
+                f_inicio = str(row.get('Fecha Inicio', '')).replace('00:00:00', '').strip()
+                f_entrega = str(row.get('Fecha Entrega', '')).replace('00:00:00', '').strip()
+                
+                date_str = f"🗓️ Inicio: {f_inicio}" if f_inicio and f_inicio != 'nan' else ""
+                if f_entrega and f_entrega != 'nan' and f_entrega != 'None':
+                    date_str += f" | 🏁 Entrega: <b>{f_entrega}</b>"
+
+                card_html = f"""
+                <div class="task-card {card_class}">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div class="task-title">{row['TAREA']}</div>
+                        <div>
+                            <span class="task-badge {badge_class}">{badge_icon} {estado}</span>
+                            <span class="task-badge badge-dept">🏢 {row['Departamento']}</span>
+                        </div>
+                    </div>
+                    <div class="task-meta">
+                        <div class="task-meta-item">👥 <b>Equipo:</b> {equipo_str}</div>
+                        <div class="task-meta-item" style="margin-left: auto;">{date_str}</div>
+                    </div>
+                </div>
+                """
+                st.markdown(card_html, unsafe_allow_html=True)
+        else:
+            st.info("No hay tareas que coincidan con los filtros seleccionados.")
+
+        # --- SECCIÓN RESUMEN RÁPIDO POR RESPONSABLE (BOTTOM) ---
+        st.markdown("---")
+        st.markdown("### 📊 Vistazo Rápido: Resumen por Responsable")
+        
+        # Calcular resumen de tareas por responsable
+        resp_stats = {}
+        for r in all_resps_list:
+            if not r or r == 'None':
+                continue
+            # Conteo donde sea R1, R2 o R3
+            m1 = df_tasks['Responsable Principal'] == r
+            m2 = df_tasks['Responsable 2'] == r if 'Responsable 2' in df_tasks.columns else False
+            m3 = df_tasks['Responsable 3'] == r if 'Responsable 3' in df_tasks.columns else False
+            
+            sub_resp = df_tasks[m1 | m2 | m3]
+            
+            pendientes = sum(sub_resp['Estado'].str.lower().str.contains('pend', na=False))
+            proceso = sum(sub_resp['Estado'].str.lower().str.contains('proceso', na=False))
+            finalizadas = sum(sub_resp['Estado'].str.lower().str.contains('finaliz|complet', na=False))
+            
+            resp_stats[r] = {
+                'Pendientes': pendientes,
+                'En Proceso': proceso,
+                'Finalizadas': finalizadas,
+                'Total': len(sub_resp)
+            }
+
+        # Renderizar Tarjetas de Vistazo en Filas
+        resp_keys = list(resp_stats.keys())
+        if resp_keys:
+            cols_per_row = 4
+            for i in range(0, len(resp_keys), cols_per_row):
+                cols_r = st.columns(cols_per_row)
+                chunk_keys = resp_keys[i:i + cols_per_row]
+                for idx_k, r_name in enumerate(chunk_keys):
+                    st_data = resp_stats[r_name]
+                    with cols_r[idx_k]:
+                        summary_html = f"""
+                        <div class="resp-summary-card">
+                            <div class="resp-summary-name">👤 {r_name}</div>
+                            <div class="resp-stat-grid">
+                                <div>
+                                    <div style="color: #C0392B;">Pend.</div>
+                                    <div class="resp-stat-num" style="color: #C0392B;">{st_data['Pendientes']}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #D68910;">Proceso</div>
+                                    <div class="resp-stat-num" style="color: #D68910;">{st_data['En Proceso']}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #1E8449;">Fin.</div>
+                                    <div class="resp-stat-num" style="color: #1E8449;">{st_data['Finalizadas']}</div>
+                                </div>
+                            </div>
+                        </div>
+                        """
+                        st.markdown(summary_html, unsafe_allow_html=True)
 
 # ------------------------------------------
 # MÓDULO 4: SCORECARD & CUMPLIMIENTO
