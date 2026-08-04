@@ -1,4 +1,5 @@
 import re
+import requests
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -214,6 +215,7 @@ FRIDOLIN_CSS = """
         border: 1px solid #EAE4D9;
         box-shadow: 0 4px 12px rgba(0,0,0,0.02);
         height: 100%;
+        margin-bottom: 1rem;
     }
     .sub-card-title {
         font-size: 1.1rem;
@@ -531,6 +533,33 @@ def load_data():
         df_vc = pd.DataFrame()
 
     return df_kpi_long, df_tasks, df_vc
+
+
+@st.cache_data(ttl=3600)
+def fetch_weather_forecast_14days():
+    """Consulta la API de Open-Meteo para obtener el pronóstico de las próximas 2 semanas (Santa Cruz)."""
+    try:
+        url = (
+            "https://api.open-meteo.com/v1/forecast?"
+            "latitude=-17.7863&longitude=-63.1812"
+            "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode"
+            "&timezone=auto"
+        )
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            daily = data.get("daily", {})
+            df_forecast = pd.DataFrame({
+                "Fecha": daily.get("time", []),
+                "Temp_Max": daily.get("temperature_2m_max", []),
+                "Temp_Min": daily.get("temperature_2m_min", []),
+                "Lluvia_mm": daily.get("precipitation_sum", []),
+                "Weather_Code": daily.get("weathercode", [])
+            })
+            return df_forecast
+        return pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
 
 
 # ==========================================
@@ -1165,7 +1194,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     )
 
 # ------------------------------------------
-# MÓDULO NUEVO: ANÁLISIS CLIMA & FESTIVOS
+# MÓDULO: ANÁLISIS CLIMA & FESTIVOS
 # ------------------------------------------
 elif menu_option == "🌤️ Análisis Clima & Festivos":
     st.subheader("🌤️ Relación del Clima, Festividades y Producción por Categorías")
@@ -1235,7 +1264,7 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
                     </div>
                 </div>
                 <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
-                    *Valores consolidados del histórico semanal registrador en base de datos.
+                    *Valores consolidados del histórico semanal registrado en base de datos.
                 </p>
             </div>
             """,
@@ -1280,6 +1309,70 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
             """,
             unsafe_allow_html=True,
         )
+
+    # 3. SECCIÓN ADICIONADA: PRONÓSTICO DE CLIMA PRÓXIMAS 2 SEMANAS
+    st.markdown("---")
+    st.markdown("### 🔮 Pronóstico Climatológico (Próximas 2 Semanas)")
+
+    df_forecast = fetch_weather_forecast_14days()
+
+    if not df_forecast.empty:
+        fig_forecast = go.Figure()
+
+        fig_forecast.add_trace(
+            go.Scatter(
+                x=df_forecast["Fecha"],
+                y=df_forecast["Temp_Max"],
+                name="Máxima (°C)",
+                mode="lines+markers",
+                line=dict(color="#E74C3C", width=3),
+                marker=dict(size=6),
+            )
+        )
+
+        fig_forecast.add_trace(
+            go.Scatter(
+                x=df_forecast["Fecha"],
+                y=df_forecast["Temp_Min"],
+                name="Mínima (°C)",
+                mode="lines+markers",
+                line=dict(color="#2980B9", width=3),
+                marker=dict(size=6),
+            )
+        )
+
+        fig_forecast.add_trace(
+            go.Bar(
+                x=df_forecast["Fecha"],
+                y=df_forecast["Lluvia_mm"],
+                name="Lluvia (mm)",
+                marker_color="#16A085",
+                opacity=0.4,
+                yaxis="y2",
+            )
+        )
+
+        fig_forecast.update_layout(
+            title="<b>Pronóstico Extendido de Temperatura y Precipitaciones - Santa Cruz</b>",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="#FFFFFF",
+            height=380,
+            hovermode="x unified",
+            xaxis=dict(tickangle=-45, showgrid=True, gridcolor="#EFECE6"),
+            yaxis=dict(title="Temperatura (°C)", showgrid=True, gridcolor="#EFECE6"),
+            yaxis2=dict(
+                title="Precipitación (mm)",
+                overlaying="y",
+                side="right",
+                showgrid=False,
+            ),
+            legend=dict(orientation="h", y=1.1, x=0.3),
+            margin=dict(l=40, r=40, t=50, b=80),
+        )
+
+        st.plotly_chart(fig_forecast, use_container_width=True, key="chart_forecast_2w")
+    else:
+        st.info("⚠️ No se pudo obtener el pronóstico automático en tiempo real. Intente nuevamente más tarde.")
 
 # ------------------------------------------
 # MÓDULO 4: GESTIÓN DE TAREAS
