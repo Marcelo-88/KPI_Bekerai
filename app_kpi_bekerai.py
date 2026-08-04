@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import re
 
 # ==========================================
@@ -36,26 +37,33 @@ FRIDOLIN_CSS = """
         padding: 1.1rem; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04); margin-bottom: 1rem;
         min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;
     }
-    .kpi-card-header { font-size: 0.82rem; font-weight: 700; color: #4A4644; text-transform: uppercase; height: 2.2rem; }
-    .kpi-card-val { font-size: 1.65rem; font-weight: 800; color: #7A1C29; margin-bottom: 0.4rem; }
-    .kpi-card-footer { font-size: 0.78rem; border-top: 1px solid #F0ECE3; padding-top: 0.5rem; }
+    .kpi-card-fallback {
+        background-color: #FFFDF5; border: 2px dashed #E6A23C; border-radius: 16px;
+        padding: 1.1rem; box-shadow: 0 4px 8px rgba(230, 162, 60, 0.12); margin-bottom: 1rem;
+        min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .kpi-card-header { font-size: 0.82rem; font-weight: 700; color: #4A4644; text-transform: uppercase; height: 2.2rem; overflow: hidden; }
+    .kpi-card-val { font-size: 1.65rem; font-weight: 800; color: #7A1C29; margin-bottom: 0.4rem; font-variant-numeric: tabular-nums; }
+    .kpi-card-footer { font-size: 0.78rem; border-top: 1px solid #F0ECE3; padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.2rem; }
     .badge-up { color: #27AE60; font-weight: 600; }
     .badge-down { color: #C0392B; font-weight: 600; }
     .badge-neutral { color: #7F8C8D; font-weight: 500; }
+    .badge-warning { color: #D35400; font-weight: 700; background: #FDEBD0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
+    .kpi-resp-tag { font-size: 0.75rem; color: #A07828; font-weight: 600; margin-bottom: 0.3rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
 </style>
 """
 st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CARGA Y CORRECCIÓN DE DATOS DEL SHEET
+# 2. CARGA Y PARSEO DE DATOS DE GOOGLE SHEETS
 # ==========================================
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
 
 def parse_custom_number(val):
     if pd.isna(val) or val == "" or str(val).strip() == "":
-        return None  # Retornamos None para no falsear ceros en semanas no registradas
+        return None
     val_str = str(val).strip()
     if any(err in val_str for err in ['#¡DIV/0!', '#DIV/0!', '#N/A', '#REF!', '#VALUE!']):
         return None
@@ -79,8 +87,9 @@ def parse_custom_number(val):
 @st.cache_data(ttl=60)
 def load_data():
     sheets = pd.read_excel(EXCEL_URL, sheet_name=None, header=None)
-    df_kpi_raw = sheets.get('KPI', pd.DataFrame())
     
+    # 1. PARSER PESTAÑA KPI
+    df_kpi_raw = sheets.get('KPI', pd.DataFrame())
     if not df_kpi_raw.empty:
         header_idx = None
         for idx, row in df_kpi_raw.iterrows():
@@ -110,8 +119,7 @@ def load_data():
             df_kpi_long = df_kpi_long[df_kpi_long['Medible'].notna() & (df_kpi_long['Medible'] != 'nan')]
             df_kpi_long['Medible'] = df_kpi_long['Medible'].astype(str).str.strip()
             
-            # --- AUTO-CORRECCIÓN DE ERRORES DE CRUCE DE FILAS EN GOOGLE SHEET ---
-            # Si "Envio Salados" tiene > 20,000 (claramente es Producción Salados cargado en la fila equivocada)
+            # Corrección de cruce accidental de filas en Sem 30
             mask_swap = (df_kpi_long['Medible'] == 'Envio Salados') & (df_kpi_long['Valor'] > 20000)
             if mask_swap.any():
                 df_kpi_long.loc[mask_swap, 'Medible'] = 'Prod Salado'
@@ -121,21 +129,37 @@ def load_data():
     else:
         df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Semana', 'Valor'])
 
-    # Tareas
+    # 2. PARSER PESTAÑA TAREAS
     df_tareas_raw = sheets.get('Tareas', pd.DataFrame())
-    df_tasks = df_tareas_raw if not df_tareas_raw.empty else pd.DataFrame()
+    if not df_tareas_raw.empty:
+        h_idx_t = None
+        for idx, row in df_tareas_raw.iterrows():
+            row_vals = [str(val).strip() for val in row.values]
+            if any(h in row_vals for h in ['TAREA', 'Tarea', 'Responsable Principal', 'Estado']):
+                h_idx_t = idx
+                break
+        
+        if h_idx_t is not None:
+            df_tasks = df_tareas_raw.iloc[h_idx_t + 1:].copy()
+            df_tasks.columns = [str(c).strip() for c in df_tareas_raw.iloc[h_idx_t].values]
+            df_tasks = df_tasks.dropna(how='all')
+            df_tasks['Estado'] = df_tasks['Estado'].fillna('Pendiente')
+            df_tasks['Responsable Principal'] = df_tasks['Responsable Principal'].fillna('Por Asignar')
+        else:
+            df_tasks = df_tareas_raw
+    else:
+        df_tasks = pd.DataFrame()
 
     return df_kpi_long, df_tasks
 
 # ==========================================
-# 3. HELPER DE GRÁFICAS
+# 3. HELPER DE GRÁFICAS CON DOBLE EJE Y
 # ==========================================
 def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores"):
-    fig = go.Figure()
-    
     existing_kpis = [k for k in kpi_list if k in df_kpis['Medible'].values]
     
     if not existing_kpis:
+        fig = go.Figure()
         fig.add_annotation(
             text="Selecciona al menos una categoría para visualizar",
             xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False,
@@ -144,8 +168,10 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         fig.update_layout(height=height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF')
         return fig
 
+    # Usar Eje Y Secundario para volúmenes masivos (>20.000 como Prod Salado)
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
     for idx, kpi in enumerate(existing_kpis):
-        # Descartar semanas donde no existe registro (None / NaN) para evitar caídas a 0
         sub_df = df_kpis[(df_kpis['Medible'] == kpi) & (df_kpis['Valor'].notna())].copy()
         
         if sub_df.empty:
@@ -155,6 +181,9 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         is_money = "Bs" in unit_label or any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO'])
         val_prefix = "Bs " if is_money else ""
         
+        max_val = sub_df['Valor'].max()
+        use_secondary = (max_val > 15000 and "Bs" not in unit_label)
+
         hover_template = (
             f"<b>{kpi}</b><br>"
             "🗓️ %{x}<br>"
@@ -162,26 +191,32 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             "<extra></extra>"
         )
         
-        fig.add_trace(go.Scatter(
-            x=sub_df['Semana'],
-            y=sub_df['Valor'],
-            name=str(kpi),
-            mode='lines+markers',
-            line=dict(color=color, width=3),
-            marker=dict(size=7, color=color, symbol='circle'),
-            hovertemplate=hover_template,
-            connectgaps=False
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=sub_df['Semana'],
+                y=sub_df['Valor'],
+                name=f"{kpi} (Eje Der.)" if use_secondary else str(kpi),
+                mode='lines+markers',
+                line=dict(color=color, width=3),
+                marker=dict(size=7, color=color, symbol='circle'),
+                hovertemplate=hover_template,
+                connectgaps=False
+            ),
+            secondary_y=use_secondary
+        )
         
     fig.update_layout(
         title=dict(text=f"<b>{title}</b>", font=dict(size=15, color="#7A1C29"), x=0, y=0.98),
         xaxis=dict(title=None, tickangle=-45, showgrid=True, gridcolor="#EFECE6"),
-        yaxis=dict(title=dict(text=unit_label, font=dict(size=12, color="#4A4644")), showgrid=True, gridcolor="#EFECE6", tickformat=",.0f", autorange=True),
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF',
         height=height, hovermode="closest",
         legend=dict(orientation="h", yanchor="top", y=-0.28, xanchor="center", x=0.5, bgcolor="rgba(255,255,255,0.85)", bordercolor="#DFD9CE", borderwidth=1),
-        margin=dict(l=55, r=30, t=50, b=110)
+        margin=dict(l=55, r=55, t=50, b=110)
     )
+
+    fig.update_yaxes(title_text=unit_label, showgrid=True, gridcolor="#EFECE6", tickformat=",.0f", secondary_y=False)
+    fig.update_yaxes(title_text=f"{unit_label} (Volumen Alto)", showgrid=False, tickformat=",.0f", secondary_y=True)
+
     return fig
 
 if hasattr(st, "dialog"):
@@ -194,8 +229,19 @@ if hasattr(st, "dialog"):
 # 4. BARRA LATERAL Y NAVEGACIÓN
 # ==========================================
 st.sidebar.title("📌 Menú Principal")
-menu_option = st.sidebar.radio("Selecciona un Módulo:", ["📊 Dashboards KPIs", "🔀 Comparador KPI vs KPI", "🔍 Explorador Sheet (Debug)"])
 
+menu_option = st.sidebar.radio(
+    "Selecciona un Módulo:",
+    [
+        "📊 Dashboards KPIs", 
+        "🔀 Comparador KPI vs KPI", 
+        "📝 Gestión de Tareas", 
+        "🏆 Scorecard & Cumplimiento",
+        "🔍 Explorador Sheet (Debug)"
+    ]
+)
+
+st.sidebar.markdown("---")
 if st.sidebar.button("🔄 Actualizar Datos Ahora", use_container_width=True):
     st.cache_data.clear()
     st.sidebar.success("¡Datos actualizados!")
@@ -206,12 +252,133 @@ except Exception as e:
     st.error(f"⚠️ Error al conectar con Google Sheets: {e}")
     st.stop()
 
-st.markdown('<div class="main-header"><h1>FRIDOLIN - TABLERO CONTROL EOS & KPIs</h1><p>Monitoreo Semanal Bekerai 2026</p></div>', unsafe_allow_html=True)
+# Header Superior
+st.markdown("""
+<div class="main-header">
+    <h1>FRIDOLIN - TABLERO CONTROL EOS & KPIs</h1>
+    <p>Monitoreo Semanal de Indicadores, Tareas y Cumplimiento Bekerai 2026</p>
+</div>
+""", unsafe_allow_html=True)
 
 # ==========================================
-# 5. MÓDULO COMPARADOR DE KPIS
+# 5. MÓDULOS DE LA APLICACIÓN
 # ==========================================
-if menu_option == "🔀 Comparador KPI vs KPI":
+
+# ------------------------------------------
+# MÓDULO 1: DASHBOARDS KPIS (TARJETAS RESTAURADAS)
+# ------------------------------------------
+if menu_option == "📊 Dashboards KPIs":
+    st.subheader("📌 Resumen de Indicadores Semanales")
+    
+    if not df_kpis.empty and 'Medible' in df_kpis.columns:
+        semanas_unicas = list(df_kpis['Semana'].unique())
+        
+        col_f1, col_f2 = st.columns([1, 2])
+        with col_f1:
+            selected_week = st.selectbox(
+                "Seleccionar Semana a Inspeccionar:", 
+                semanas_unicas, 
+                index=len(semanas_unicas) - 1
+            )
+            
+        responsables = ["Todos"] + sorted([str(r) for r in df_kpis['Responsable'].dropna().unique() if str(r) != 'nan'])
+        with col_f2:
+            selected_resp = st.selectbox("Filtrar tarjetas por Responsable:", responsables)
+
+        current_week_idx = semanas_unicas.index(selected_week)
+        df_all_selected = df_kpis.copy()
+        if selected_resp != "Todos":
+            df_all_selected = df_all_selected[df_all_selected['Responsable'] == selected_resp]
+            
+        metrics_list = df_all_selected['Medible'].unique()
+        
+        st.markdown(f"##### Datos correspondientes a **{selected_week}**")
+        
+        if len(metrics_list) > 0:
+            cols = st.columns(4)
+            for idx, kpi in enumerate(metrics_list):
+                df_kpi_series = df_kpis[df_kpis['Medible'] == kpi]
+                resp = df_kpi_series['Responsable'].dropna().values[0] if not df_kpi_series.empty else "-"
+                
+                val_curr = 0.0
+                actual_data_week = selected_week
+                is_fallback = False
+                
+                # Búsqueda hacia atrás por si la semana seleccionada no tiene dato
+                for w_idx in range(current_week_idx, -1, -1):
+                    w_name = semanas_unicas[w_idx]
+                    row_w = df_kpi_series[df_kpi_series['Semana'] == w_name]
+                    if not row_w.empty and pd.notna(row_w['Valor'].values[0]):
+                        v = float(row_w['Valor'].values[0])
+                        val_curr = v
+                        actual_data_week = w_name
+                        if w_idx < current_week_idx:
+                            is_fallback = True
+                        break
+                            
+                val_prev = None
+                prev_w_name = ""
+                actual_week_idx_found = semanas_unicas.index(actual_data_week) if actual_data_week in semanas_unicas else -1
+                if actual_week_idx_found > 0:
+                    prev_w_name = semanas_unicas[actual_week_idx_found - 1]
+                    row_prev = df_kpi_series[df_kpi_series['Semana'] == prev_w_name]
+                    if not row_prev.empty and pd.notna(row_prev['Valor'].values[0]):
+                        val_prev = float(row_prev['Valor'].values[0])
+                
+                if val_prev is not None and val_prev != 0 and val_curr != 0:
+                    pct_prev = ((val_curr - val_prev) / val_prev) * 100
+                    if pct_prev > 0:
+                        var_prev_html = f'<span class="badge-up">▲ +{pct_prev:.1f}%</span> vs {prev_w_name}'
+                    elif pct_prev < 0:
+                        var_prev_html = f'<span class="badge-down">▼ {pct_prev:.1f}%</span> vs {prev_w_name}'
+                    else:
+                        var_prev_html = f'<span class="badge-neutral">= 0.0%</span> vs {prev_w_name}'
+                else:
+                    var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
+                    
+                valid_vals = df_kpi_series[df_kpi_series['Valor'].notna()]['Valor']
+                avg_total = valid_vals.mean() if not valid_vals.empty else 0.0
+                
+                if avg_total > 0 and val_curr != 0:
+                    pct_avg = ((val_curr - avg_total) / avg_total) * 100
+                    if pct_avg > 0:
+                        var_avg_html = f'<span class="badge-up">▲ +{pct_avg:.1f}%</span> vs prom ({avg_total:,.0f})'
+                    elif pct_avg < 0:
+                        var_avg_html = f'<span class="badge-down">▼ {pct_avg:.1f}%</span> vs prom ({avg_total:,.0f})'
+                    else:
+                        var_avg_html = f'<span class="badge-neutral">= prom ({avg_total:,.0f})</span>'
+                else:
+                    var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
+                
+                is_money = any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR', 'PRECIO'])
+                prefix = "Bs " if is_money else ""
+                val_formatted = f"{prefix}{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{prefix}{val_curr:,.2f}"
+                
+                card_class = "kpi-card-fallback" if is_fallback else "kpi-card"
+                fallback_tag = f'<div style="margin-bottom:0.3rem;"><span class="badge-warning">⚠️ DATO DE {actual_data_week}</span></div>' if is_fallback else ""
+                
+                html_code = (
+                    f'<div class="{card_class}">'
+                    f'<div>'
+                    f'<div class="kpi-card-header">{kpi}</div>'
+                    f'<div class="kpi-resp-tag">👤 Resp: {resp}</div>'
+                    f'{fallback_tag}'
+                    f'<div class="kpi-card-val">{val_formatted}</div>'
+                    f'</div>'
+                    f'<div class="kpi-card-footer">'
+                    f'<div>{var_prev_html}</div>'
+                    f'<div>{var_avg_html}</div>'
+                    f'</div>'
+                    f'</div>'
+                )
+                
+                with cols[idx % 4]:
+                    st.markdown(html_code, unsafe_allow_html=True)
+
+# ------------------------------------------
+# MÓDULO 2: COMPARADOR KPI vs KPI
+# ------------------------------------------
+elif menu_option == "🔀 Comparador KPI vs KPI":
     st.subheader("🔀 Análisis Comparativo Multi-KPI")
 
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
@@ -229,10 +396,11 @@ if menu_option == "🔀 Comparador KPI vs KPI":
             return list(set(matched))
 
         kpi_g1 = [k for k in all_kpis_in_db if any(kw in k.upper() for kw in ["VENTAS", "PAGOS PROVEEDORES MP", "TOTAL C X P", "BALANCE EFECTIVO"])]
+        kpi_g3 = [k for k in all_kpis_in_db if any(kw in k.upper() for kw in ["INVERSION RRSS", "PAGO PROVEEDORES MARKETING", "VENTAS"])]
 
         c1, c2 = st.columns(2)
         with c1:
-            st.markdown('<div class="compare-card-title">💵 1. Finanzas en Bolivianos</div>', unsafe_allow_html=True)
+            st.markdown('<div class="compare-card-title">💵 1. Ventas vs Pagos vs CxP vs Efectivo (Bs)</div>', unsafe_allow_html=True)
             fig1 = render_multi_kpi_chart(df_kpis, kpi_g1, title="Finanzas & Flujo de Caja", height=380, unit_label="Monto en Bs")
             st.plotly_chart(fig1, use_container_width=True, key="card_1_main")
 
@@ -248,8 +416,50 @@ if menu_option == "🔀 Comparador KPI vs KPI":
             if st.button("🔍 Maximizar Gráfico 2", key="btn_max_2", use_container_width=True):
                 show_full_graph_dialog(df_kpis, kpi_g2, "Flujo de Categorías Seleccionadas", unit_label="Unidades")
 
-elif menu_option == "📊 Dashboards KPIs":
-    st.info("Ingresa al menú de la izquierda para explorar los gráficos comparativos de la app.")
+        st.markdown("---")
+        c3, c4 = st.columns(2)
+        with c3:
+            st.markdown('<div class="compare-card-title">📣 3. Inversión Marketing vs Ventas (Bs)</div>', unsafe_allow_html=True)
+            fig3 = render_multi_kpi_chart(df_kpis, kpi_g3, title="Marketing & Retorno", height=380, unit_label="Monto en Bs")
+            st.plotly_chart(fig3, use_container_width=True, key="card_3_main")
+
+        with c4:
+            st.markdown('<div class="compare-card-title">🛠️ 4. Comparador Libre</div>', unsafe_allow_html=True)
+            selected_custom = st.multiselect("Selecciona cualquier conjunto de KPIs:", all_kpis_in_db, default=all_kpis_in_db[:2] if len(all_kpis_in_db) >= 2 else all_kpis_in_db)
+            if selected_custom:
+                fig4 = render_multi_kpi_chart(df_kpis, selected_custom, title="Selección Libre Personalizada", height=350, unit_label="Valores")
+                st.plotly_chart(fig4, use_container_width=True, key="card_4_main")
+
+# ------------------------------------------
+# MÓDULO 3: GESTIÓN DE TAREAS
+# ------------------------------------------
+elif menu_option == "📝 Gestión de Tareas":
+    st.subheader("📝 Lista de Tareas y Operaciones EOS")
+    if not df_tasks.empty:
+        st.dataframe(df_tasks, use_container_width=True, hide_index=True)
+
+# ------------------------------------------
+# MÓDULO 4: SCORECARD & CUMPLIMIENTO
+# ------------------------------------------
+elif menu_option == "🏆 Scorecard & Cumplimiento":
+    st.subheader("🏆 Cumplimiento por Responsable")
+    if not df_tasks.empty and 'Estado' in df_tasks.columns and 'Responsable Principal' in df_tasks.columns:
+        task_summary = df_tasks.groupby(['Responsable Principal', 'Estado']).size().unstack(fill_value=0)
+        task_summary['Completadas'] = task_summary.get('Finalizado', 0) + task_summary.get('Completado', 0)
+        task_summary['Total Tareas'] = task_summary.sum(axis=1) - task_summary['Completadas']
+        task_summary['% Cumplimiento'] = (task_summary['Completadas'] / task_summary['Total Tareas'] * 100).round(1).fillna(0)
+        task_summary = task_summary.reset_index().sort_values('% Cumplimiento', ascending=False)
+        
+        fig_score = px.bar(
+            task_summary, x='Responsable Principal', y='% Cumplimiento', text='% Cumplimiento',
+            color='% Cumplimiento', color_continuous_scale=['#C0392B', '#F39C12', '#27AE60']
+        )
+        fig_score.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF', yaxis=dict(range=[0, 100]))
+        st.plotly_chart(fig_score, use_container_width=True, key="chart_scorecard")
+
+# ------------------------------------------
+# MÓDULO 5: EXPLORADOR SHEET
+# ------------------------------------------
 elif menu_option == "🔍 Explorador Sheet (Debug)":
-    st.subheader("🔍 Previsualización de Datos Procesados")
+    st.subheader("🔍 Previsualización Directa de Datos Procesados")
     st.dataframe(df_kpis, use_container_width=True)
