@@ -153,7 +153,8 @@ def load_data():
             df_kpi_clean.columns = [str(c).strip() for c in df_kpi_raw.iloc[header_idx].values]
             df_kpi_clean = df_kpi_clean.dropna(how='all')
             
-            id_cols = [c for c in df_kpi_clean.columns if c in ['Quien', 'Responsable', 'Departamento', 'Medibles', 'Medible']]
+            # Se agrega 'Categoria' a las columnas de identificacion
+            id_cols = [c for c in df_kpi_clean.columns if c in ['Quien', 'Responsable', 'Departamento', 'Medibles', 'Medible', 'Categoria', 'Categoría']]
             val_cols = [c for c in df_kpi_clean.columns if c not in id_cols and not str(c).startswith('Unnamed') and str(c) != 'nan']
             
             df_kpi_long = pd.melt(
@@ -165,19 +166,24 @@ def load_data():
             )
             
             df_kpi_long['Valor'] = df_kpi_long['Valor'].apply(parse_custom_number)
-            df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
+            df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible', 'Categoría': 'Categoria'}, inplace=True)
             df_kpi_long = df_kpi_long[df_kpi_long['Medible'].notna() & (df_kpi_long['Medible'] != 'nan')]
             df_kpi_long['Medible'] = df_kpi_long['Medible'].astype(str).str.strip()
             df_kpi_long['Departamento'] = df_kpi_long['Departamento'].fillna('Sin Depto').astype(str).str.strip()
             
+            if 'Categoria' in df_kpi_long.columns:
+                df_kpi_long['Categoria'] = df_kpi_long['Categoria'].fillna('General').astype(str).str.strip()
+            else:
+                df_kpi_long['Categoria'] = 'General'
+
             mask_swap = (df_kpi_long['Medible'] == 'Envio Salados') & (df_kpi_long['Valor'] > 20000)
             if mask_swap.any():
                 df_kpi_long.loc[mask_swap, 'Medible'] = 'Prod Salado'
 
         else:
-            df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Semana', 'Valor'])
+            df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria', 'Semana', 'Valor'])
     else:
-        df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Semana', 'Valor'])
+        df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria', 'Semana', 'Valor'])
 
     # 2. PARSER PESTAÑA TAREAS
     df_tareas_raw = sheets.get('Tareas', pd.DataFrame())
@@ -225,8 +231,11 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    # Agrupar valores para consolidar si hay subcategorías en los gráficos
+    df_grouped = df_kpis.groupby(['Medible', 'Semana'], as_index=False)['Valor'].sum()
+
     for idx, kpi in enumerate(existing_kpis):
-        sub_df = df_kpis[(df_kpis['Medible'] == kpi) & (df_kpis['Valor'].notna())].copy()
+        sub_df = df_grouped[(df_grouped['Medible'] == kpi) & (df_grouped['Valor'].notna())].copy()
         
         if sub_df.empty:
             continue
@@ -360,16 +369,20 @@ if menu_option == "📊 Dashboards KPIs":
         if len(metrics_list) > 0:
             cols = st.columns(4)
             for idx, kpi in enumerate(metrics_list):
-                df_kpi_series = df_kpis[df_kpis['Medible'] == kpi]
+                # Filtrar conjunto del medible específico respetando departamento/responsable
+                df_kpi_series = df_all_selected[df_all_selected['Medible'] == kpi]
                 resp = df_kpi_series['Responsable'].dropna().values[0] if not df_kpi_series.empty else "-"
                 
+                # AGRUPACIÓN: Sumar todas las subcategorías (Panadería, Tortas, Salados, etc.)
+                df_summed_by_week = df_kpi_series.groupby('Semana', as_index=False)['Valor'].sum()
+
                 val_curr = 0.0
                 actual_data_week = selected_week
                 is_fallback = False
                 
                 for w_idx in range(current_week_idx, -1, -1):
                     w_name = semanas_unicas[w_idx]
-                    row_w = df_kpi_series[df_kpi_series['Semana'] == w_name]
+                    row_w = df_summed_by_week[df_summed_by_week['Semana'] == w_name]
                     if not row_w.empty and pd.notna(row_w['Valor'].values[0]):
                         v = float(row_w['Valor'].values[0])
                         val_curr = v
@@ -383,7 +396,7 @@ if menu_option == "📊 Dashboards KPIs":
                 actual_week_idx_found = semanas_unicas.index(actual_data_week) if actual_data_week in semanas_unicas else -1
                 if actual_week_idx_found > 0:
                     prev_w_name = semanas_unicas[actual_week_idx_found - 1]
-                    row_prev = df_kpi_series[df_kpi_series['Semana'] == prev_w_name]
+                    row_prev = df_summed_by_week[df_summed_by_week['Semana'] == prev_w_name]
                     if not row_prev.empty and pd.notna(row_prev['Valor'].values[0]):
                         val_prev = float(row_prev['Valor'].values[0])
                 
@@ -398,7 +411,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
                     
-                valid_vals = df_kpi_series[df_kpi_series['Valor'].notna()]['Valor']
+                valid_vals = df_summed_by_week[df_summed_by_week['Valor'].notna()]['Valor']
                 avg_total = valid_vals.mean() if not valid_vals.empty else 0.0
                 
                 if avg_total > 0 and val_curr != 0:
@@ -412,7 +425,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
-                is_money = any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR', 'PRECIO'])
+                is_money = any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR', 'PRECIO']) and ("PRECIO VTA" in kpi.upper() or "TOTAL" in kpi.upper() or kpi.upper() == "VENTAS")
                 prefix = "Bs " if is_money else ""
                 val_formatted = f"{prefix}{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{prefix}{val_curr:,.2f}"
                 
