@@ -19,7 +19,7 @@ PASTEL_COLORS = [
     '#C0392B',  # Bordó / Tinto Fridolin
     '#2980B9',  # Azul Pastel Profundo
     '#27AE60',  # Verde Menta / Esmeralda
-    '#D35400',  # Naranja Calido / Melocotón
+    '#D35400',  # Naranja Cálido / Melocotón
     '#8E44AD',  # Lavanda / Purpura Pastel
     '#16A085',  # Turquesa Pastel
     '#F39C12',  # Dorado Suave
@@ -233,9 +233,9 @@ def load_data():
     return df_kpi_long, df_tasks
 
 # ==========================================
-# 3. HELPER DE GRÁFICAS CON AUTO-ESCALA Y HOVER INDIVIDUAL
+# 3. HELPER DE GRÁFICAS CON AUTO-ESCALA DINÁMICA Y HOVER INDIVIDUAL
 # ==========================================
-def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores"):
+def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores", use_log_scale=False):
     fig = go.Figure()
     
     existing_kpis = [k for k in kpi_list if k in df_kpis['Medible'].values]
@@ -259,7 +259,7 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         is_money = "Bs" in unit_label or any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR'])
         val_prefix = "Bs " if is_money else ""
         
-        # Etiqueta individual para la línea sobre la que se asoma el mouse
+        # Etiqueta individual por línea (Hover exacto)
         hover_template = (
             f"<b>{kpi}</b><br>"
             "🗓️ %{x}<br>"
@@ -276,6 +276,9 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             marker=dict(size=7, color=color, symbol='circle'),
             hovertemplate=hover_template
         ))
+
+    # Configuración de tipo de escala del eje Y (Lineal o Logarítmica)
+    y_axis_type = "log" if use_log_scale else "linear"
         
     fig.update_layout(
         title=dict(
@@ -295,12 +298,13 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             showgrid=True, 
             gridcolor="#EFECE6",
             tickformat=",.0f",
-            autorange=True # Fuerza la autoescala dinámica del eje Y al filtrar/cambiar series
+            type=y_axis_type,  # Soporta escala logarítmica si hay picos gigantes
+            autorange=True     # Recalcula dinámicamente el min y max de los datos visibles
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='#FFFFFF',
         height=height,
-        hovermode="closest", # SOLO MUESTRA LA LÍNEA SOBRE LA QUE ESTÁ EL MOUSE (Evita la lista gigante)
+        hovermode="closest", # MUESTRA ÚNICAMENTE LA LÍNEA SOBRE LA QUE ESTÁ EL CURSOR
         hoverlabel=dict(
             bgcolor="#FFFFFF",
             font_size=12,
@@ -325,11 +329,11 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
 # MODAL PANTALLA COMPLETA
 if hasattr(st, "dialog"):
     @st.dialog("🔍 Vista Ampliada del Gráfico", width="large")
-    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores"):
-        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=600, unit_label=unit_label)
+    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores", use_log_scale=False):
+        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=600, unit_label=unit_label, use_log_scale=use_log_scale)
         st.plotly_chart(fig, use_container_width=True, key=f"dialog_{title}")
 else:
-    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores"):
+    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores", use_log_scale=False):
         pass
 
 # ==========================================
@@ -495,17 +499,21 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
         all_kpis_in_db = list(df_kpis['Medible'].unique())
         
-        def find_kpis_matching(keywords):
+        def find_kpis_exact_or_keyword(category_list):
+            """Filtra los KPIs para asociarlos exactamente a sus familias de métricas"""
             matched = []
             for k in all_kpis_in_db:
-                for kw in keywords:
-                    if kw.lower() in str(k).lower():
+                k_upper = str(k).upper()
+                for cat in category_list:
+                    cat_upper = cat.upper()
+                    # Mapeo exacto de palabras clave por categoría
+                    if cat_upper in k_upper or (cat_upper == "TORTAS" and "TORTA" in k_upper):
                         matched.append(k)
                         break
-            return matched
+            return list(set(matched))
 
-        kpi_g1 = find_kpis_matching(["Ventas", "Pagos Proveedores MP", "Total C x P", "Balance Efectivo"])
-        kpi_g3 = find_kpis_matching(["Inversion RRSS", "Pago Proveedores Marketing", "Ventas"])
+        kpi_g1 = [k for k in all_kpis_in_db if any(kw in k.upper() for kw in ["VENTAS", "PAGOS PROVEEDORES MP", "TOTAL C X P", "BALANCE EFECTIVO"])]
+        kpi_g3 = [k for k in all_kpis_in_db if any(kw in k.upper() for kw in ["INVERSION RRSS", "PAGO PROVEEDORES MARKETING", "VENTAS"])]
 
         c1, c2 = st.columns(2)
         
@@ -517,25 +525,43 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             if st.button("🔍 Maximizar Gráfico 1", key="btn_max_1", use_container_width=True):
                 show_full_graph_dialog(df_kpis, kpi_g1, "1. Ventas vs Pagos vs CxP vs Balance Efectivo (Bs)", unit_label="Monto en Bs")
 
-        # --- TARJETA 2: PRODUCCIÓN, ENVÍOS Y BAJAS (SELECCIÓN MÚLTIPLE) ---
+        # --- TARJETA 2: PRODUCCIÓN, ENVÍOS Y BAJAS POR CATEGORÍA ---
         with c2:
             st.markdown('<div class="compare-card-title">🍰 2. Producción, Envíos y Bajas por Categoría</div>', unsafe_allow_html=True)
             
-            categorias_bekerai = ["Tortas", "Pasteles Individuales", "Postres Enteros", "Panaderia", "Salado"]
+            sub_col_sel, sub_col_scale = st.columns([2, 1])
             
-            # Selector Múltiple
-            selected_cats = st.multiselect(
-                "Seleccionar Categorías a Comparar:", 
-                categorias_bekerai, 
-                default=["Tortas"]
+            with sub_col_sel:
+                categorias_bekerai = ["Tortas", "Pasteles Individuales", "Postres Enteros", "Panaderia", "Salados"]
+                selected_cats = st.multiselect(
+                    "Filtrar Categorías:", 
+                    categorias_bekerai, 
+                    default=["Tortas"]
+                )
+            
+            with sub_col_scale:
+                use_log_scale_card2 = st.checkbox("📐 Escala Log", value=False, help="Activa esta opción si tienes métricas de 50.000 junto a métricas de 100 para visualizar ambas en detalle.")
+
+            kpi_g2 = find_kpis_exact_or_keyword(selected_cats) if selected_cats else []
+            
+            fig2 = render_multi_kpi_chart(
+                df_kpis, 
+                kpi_g2, 
+                title="Flujo de Categorías Seleccionadas", 
+                height=380, 
+                unit_label="Unidades",
+                use_log_scale=use_log_scale_card2
             )
-            
-            kpi_g2 = find_kpis_matching(selected_cats) if selected_cats else []
-            
-            fig2 = render_multi_kpi_chart(df_kpis, kpi_g2, title="Flujo de Categorías Seleccionadas", height=380, unit_label="Unidades")
             st.plotly_chart(fig2, use_container_width=True, key="card_2_main")
+            
             if st.button("🔍 Maximizar Gráfico 2", key="btn_max_2", use_container_width=True):
-                show_full_graph_dialog(df_kpis, kpi_g2, "Flujo de Categorías Seleccionadas", unit_label="Unidades")
+                show_full_graph_dialog(
+                    df_kpis, 
+                    kpi_g2, 
+                    "Flujo de Categorías Seleccionadas", 
+                    unit_label="Unidades",
+                    use_log_scale=use_log_scale_card2
+                )
 
         st.markdown("---")
         c3, c4 = st.columns(2)
