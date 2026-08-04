@@ -79,13 +79,15 @@ FRIDOLIN_CSS = """
     /* TARJETA RESUMEN RESPONSABLE */
     .resp-summary-card {
         background-color: #FFFFFF; border: 1px solid #E5E0D8; border-radius: 12px;
-        padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 0.8rem;
     }
     .resp-summary-name { font-weight: 700; font-size: 1rem; color: #7A1C29; margin-bottom: 0.6rem; border-bottom: 1px solid #F0ECE3; padding-bottom: 0.3rem; }
     .resp-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 0.8rem; }
     .resp-stat-num { font-weight: 800; font-size: 1.1rem; }
 </style>
-""", unsafe_allow_html=True)
+"""
+
+st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 
 # ==========================================
 # 2. CARGA Y PARSEO DE DATOS DE GOOGLE SHEETS
@@ -175,7 +177,6 @@ def load_data():
             df_tasks.columns = [str(c).strip() for c in df_tareas_raw.iloc[h_idx_t].values]
             df_tasks = df_tasks.dropna(how='all')
             
-            # Limpieza básica de columnas
             df_tasks['TAREA'] = df_tasks['TAREA'].astype(str).str.strip()
             df_tasks = df_tasks[df_tasks['TAREA'].notna() & (df_tasks['TAREA'] != 'nan') & (df_tasks['TAREA'] != '')]
             
@@ -481,12 +482,12 @@ elif menu_option == "📝 Gestión de Tareas":
         f_col1, f_col2, f_col3 = st.columns(3)
         
         # Filtro Estados
-        estados_disponibles = sorted(list(df_tasks['Estado'].unique()))
+        estados_disponibles = sorted(list(df_tasks['Estado'].dropna().unique()))
         with f_col1:
             sel_estados = st.multiselect("📌 Filtrar por Estado:", estados_disponibles, default=estados_disponibles)
             
         # Filtro Departamento
-        deptos_disponibles = sorted(list(df_tasks['Departamento'].unique()))
+        deptos_disponibles = sorted(list(df_tasks['Departamento'].dropna().unique()))
         with f_col2:
             sel_deptos = st.multiselect("🏢 Filtrar por Departamento:", deptos_disponibles, default=deptos_disponibles)
             
@@ -515,7 +516,7 @@ elif menu_option == "📝 Gestión de Tareas":
             mask_r3 = df_filtered['Responsable 3'].isin(sel_resps) if 'Responsable 3' in df_filtered.columns else False
             df_filtered = df_filtered[mask_r1 | mask_r2 | mask_r3]
 
-        st.markdown(f"Showing **{len(df_filtered)}** of **{len(df_tasks)}** total tasks.")
+        st.markdown(f"Mostrando **{len(df_filtered)}** de **{len(df_tasks)}** tareas en total.")
         st.markdown("<br>", unsafe_allow_html=True)
 
         # --- MOSTRAR TARJETAS ---
@@ -582,7 +583,6 @@ elif menu_option == "📝 Gestión de Tareas":
         for r in all_resps_list:
             if not r or r == 'None':
                 continue
-            # Conteo donde sea R1, R2 o R3
             m1 = df_tasks['Responsable Principal'] == r
             m2 = df_tasks['Responsable 2'] == r if 'Responsable 2' in df_tasks.columns else False
             m3 = df_tasks['Responsable 3'] == r if 'Responsable 3' in df_tasks.columns else False
