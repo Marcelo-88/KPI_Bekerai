@@ -20,6 +20,44 @@ PASTEL_COLORS = [
     '#16A085', '#F39C12', '#E74C3C', '#34495E', '#D4AC0D'
 ]
 
+# MAPEO EXPLÍCITO DE FORMATOS SEGÚN GOOGLE SHEETS
+MEDIBLE_TYPES = {
+    # 1. MONEDA NACIONAL (BOLIVIANOS - Bs)
+    "Venta Total Bolivianos": "Bs",
+    "Bajas (Precio vta)": "Bs",
+    "Inversion RRSS": "Bs",
+    "Valor Enviado FBCA": "Bs",
+    "Compras Proveedores MP": "Bs",
+    "Valor Enviado Bodega": "Bs",
+    "Pago Proveedores Marketing": "Bs",
+    "Balance Efectivo": "Bs",
+    "Pagos Proveedores MP": "Bs",
+    "Total C x P": "Bs",
+    "Total C x P Proveedores MP": "Bs",
+    "Ticket Promedio": "Bs",
+    "Pagos menos Compras": "Bs",
+    "Vistas x 1 Bs": "Bs",
+
+    # 2. PORCENTAJES (%)
+    "Bajas % vs Vta": "%",
+    "Gasto Mktg vs Ventas": "%",
+    "Valor Enviado Bodega / Vtas": "%",
+    "Valor Enviado FBCA / Vtas": "%",
+    "Valor enviado TOTAL / Vtas": "%",
+
+    # 3. UNIDADES / CANTIDADES
+    "Alcance IG&Fb + Reprd. Vistas TikTok": "Unidad",
+    "Facturas Emitidas": "Unidad",
+    "Tortas vendidas": "Unidad",
+    "Bajas": "Unidad",
+    "Ventas": "Unidad",
+    "Envio": "Unidad",
+    "Produccion": "Unidad",
+    "Clientes registrados": "Unidad",
+    "Puntaje Promedio Checklist Suc": "Unidad",
+    "Sucursales Visitadas promedio": "Unidad"
+}
+
 FRIDOLIN_CSS = """
 <style>
     .stApp { background-color: #F7F4EE; color: #2D2B2A; }
@@ -41,9 +79,7 @@ FRIDOLIN_CSS = """
         transition: all 0.2s ease;
     }
 
-    /* VARIACIONES SIMPLIFICADAS DE COLOR (SOLO VS SEMANA ANTERIOR) */
-    
-    /* 1. Bajó vs Semana Anterior -> Rojo Vino Fridolin */
+    /* VARIACIONES DE COLOR (VS SEMANA ANTERIOR) */
     .kpi-bg-drop {
         background-color: #7A1C29 !important;
         border-color: #58131D !important;
@@ -60,7 +96,6 @@ FRIDOLIN_CSS = """
     .kpi-bg-drop .kpi-breakdown-num { color: #FFFFFF !important; }
     .kpi-bg-drop .kpi-card-footer { border-top-color: rgba(255, 255, 255, 0.2) !important; }
 
-    /* 2. Subió vs Semana Anterior -> Tono Pistacho (#E1FFC9) */
     .kpi-bg-up {
         background-color: #E1FFC9 !important;
         border-color: #C2E8A3 !important;
@@ -76,7 +111,6 @@ FRIDOLIN_CSS = """
     .kpi-bg-up .kpi-breakdown-cat { color: #335C35 !important; }
     .kpi-bg-up .kpi-breakdown-num { color: #1E4620 !important; }
 
-    /* 3. Neutral / Sin Datos para comparar -> Marfil Oscuro */
     .kpi-bg-neutral {
         background-color: #EDE7D9 !important;
         border-color: #D3CBBE !important;
@@ -86,7 +120,6 @@ FRIDOLIN_CSS = """
     .kpi-bg-neutral .kpi-card-val { color: #7A1C29 !important; }
     .kpi-bg-neutral .kpi-resp-tag { color: #8A6D3B !important; }
 
-    /* BORDE DE FALLBACK PARA SEMANAS HISTÓRICAS */
     .kpi-border-fallback {
         border: 2px dashed #E6A23C !important;
         box-shadow: 0 2px 6px rgba(230, 162, 60, 0.18) !important;
@@ -95,7 +128,6 @@ FRIDOLIN_CSS = """
     .kpi-card-header { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; line-height: 1.1; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .kpi-card-val { font-size: 1.55rem; font-weight: 800; margin: 0.1rem 0 0.3rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
     
-    /* DESGLOSE DE CATEGORÍAS */
     .kpi-breakdown-box {
         border-radius: 6px; padding: 0.35rem 0.5rem;
         margin: 0.3rem 0 0.4rem 0; font-size: 0.74rem; display: flex; flex-direction: column; gap: 0.15rem;
@@ -114,7 +146,6 @@ FRIDOLIN_CSS = """
     .kpi-resp-tag { font-size: 0.73rem; font-weight: 600; margin-bottom: 0.1rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
 
-    /* CONTENEDOR ÚNICO PARA TAREAS */
     .task-container-card {
         background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 16px;
         padding: 1rem 1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 2rem;
@@ -151,7 +182,7 @@ FRIDOLIN_CSS = """
 st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CARGA Y PARSEO DE DATOS DE GOOGLE SHEETS
+# 2. CARGA Y PARSEO DE DATOS
 # ==========================================
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
@@ -159,15 +190,14 @@ ONLINE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/ed
 
 def parse_custom_number(val):
     if pd.isna(val) or val == "" or str(val).strip() == "":
-        return None, False
+        return None
     val_str = str(val).strip()
     if any(err in val_str for err in ['#¡DIV/0!', '#DIV/0!', '#N/A', '#REF!', '#VALUE!']):
-        return None, False
+        return None
         
-    is_percent = '%' in val_str
     cleaned = re.sub(r'[^0-9,\.\-]', '', val_str)
     if not cleaned:
-        return None, False
+        return None
         
     if ',' in cleaned and '.' in cleaned:
         cleaned = cleaned.replace('.', '').replace(',', '.')
@@ -175,16 +205,44 @@ def parse_custom_number(val):
         cleaned = cleaned.replace(',', '.')
         
     try:
-        num = float(cleaned)
-        return num, is_percent
+        return float(cleaned)
     except ValueError:
-        return None, False
+        return None
+
+def format_kpi_value(val, medible_name):
+    """Aplica formato estricto según el nombre del medible definido en MEDIBLE_TYPES."""
+    if val is None or pd.isna(val):
+        return "-"
+        
+    kpi_clean = str(medible_name).strip()
+    unit_type = MEDIBLE_TYPES.get(kpi_clean, None)
+    
+    # Búsqueda secundaria si no está exacto
+    if not unit_type:
+        for k, v in MEDIBLE_TYPES.items():
+            if k.lower() in kpi_clean.lower():
+                unit_type = v
+                break
+
+    if unit_type == "%":
+        val_pct = val * 100 if val <= 1.0 and val != 0 else val
+        return f"{val_pct:.2f}%"
+
+    elif unit_type == "Bs":
+        if val >= 100 or val % 1 == 0:
+            return f"Bs {val:,.0f}"
+        return f"Bs {val:,.2f}"
+
+    else:
+        if val >= 100 or val % 1 == 0:
+            return f"{val:,.0f}"
+        return f"{val:,.2f}"
 
 @st.cache_data(ttl=60)
 def load_data():
     sheets = pd.read_excel(EXCEL_URL, sheet_name=None, header=None)
     
-    # 1. PARSER PESTAÑA KPI CON SOPORTE PARA COLUMNA CATEGORÍA
+    # 1. PARSER PESTAÑA KPI
     df_kpi_raw = sheets.get('KPI', pd.DataFrame())
     if not df_kpi_raw.empty:
         header_idx = None
@@ -210,10 +268,7 @@ def load_data():
                 value_name='Valor_Raw'
             )
             
-            parsed_results = df_kpi_long['Valor_Raw'].apply(parse_custom_number)
-            df_kpi_long['Valor'] = [res[0] for res in parsed_results]
-            df_kpi_long['Is_Percent'] = [res[1] for res in parsed_results]
-            
+            df_kpi_long['Valor'] = df_kpi_long['Valor_Raw'].apply(parse_custom_number)
             df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
             
             if 'Categoria' in df_kpi_long.columns:
@@ -232,9 +287,9 @@ def load_data():
                 lambda r: f"{r['Medible']} {r['Categoria_Clean']}".strip() if r['Categoria_Clean'] else r['Medible'], axis=1
             )
         else:
-            df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor_Raw', 'Valor', 'Is_Percent'])
+            df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor_Raw', 'Valor'])
     else:
-        df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor_Raw', 'Valor', 'Is_Percent'])
+        df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor_Raw', 'Valor'])
 
     # 2. PARSER PESTAÑA TAREAS
     df_tareas_raw = sheets.get('Tareas', pd.DataFrame())
@@ -265,7 +320,7 @@ def load_data():
     return df_kpi_long, df_tasks
 
 # ==========================================
-# 3. HELPER DE GRÁFICAS CON DOBLE EJE Y
+# 3. HELPER DE GRÁFICAS MULTI-KPI
 # ==========================================
 def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores"):
     existing_kpis = [k for k in kpi_list if k in df_kpis['Medible'].values or k in df_kpis['Medible_Full'].values]
@@ -289,21 +344,17 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             sub_df = sub_df.groupby('Semana', as_index=False)['Valor'].sum()
             
         sub_df = sub_df[sub_df['Valor'].notna()]
-        
         if sub_df.empty:
             continue
             
         color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-        is_money = "Bs" in unit_label or any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO'])
-        val_prefix = "Bs " if is_money else ""
-        
         max_val = sub_df['Valor'].max()
         use_secondary = (max_val > 15000 and "Bs" not in unit_label)
 
         hover_template = (
             f"<b>{kpi}</b><br>"
             "🗓️ %{x}<br>"
-            f"📊 Valor: <b>{val_prefix}%{{y:,.2f}}</b>"
+            "📊 Valor: <b>%{y:,.2f}</b>"
             "<extra></extra>"
         )
         
@@ -426,8 +477,6 @@ if menu_option == "📊 Dashboards KPIs":
                 resp = df_kpi_series['Responsable'].dropna().values[0] if not df_kpi_series.empty else "-"
                 
                 val_curr = 0.0
-                is_percent_val = False
-                raw_val_sheet = ""
                 actual_data_week = selected_week
                 is_fallback = False
                 
@@ -445,8 +494,6 @@ if menu_option == "📊 Dashboards KPIs":
                     if w_data is not None:
                         df_current_rows = w_data
                         val_curr = float(w_data['Valor'].sum())
-                        is_percent_val = bool(w_data['Is_Percent'].any())
-                        raw_val_sheet = str(w_data['Valor_Raw'].iloc[0]) if not w_data['Valor_Raw'].empty else ""
                         actual_data_week = w_name
                         if w_idx < current_week_idx:
                             is_fallback = True
@@ -482,32 +529,27 @@ if menu_option == "📊 Dashboards KPIs":
                 if avg_total > 0 and val_curr != 0:
                     pct_avg = ((val_curr - avg_total) / avg_total) * 100
                     if pct_avg > 0:
-                        var_avg_html = f'<span class="badge-up">▲ +{pct_avg:.1f}%</span> vs prom ({avg_total:,.0f})'
+                        var_avg_html = f'<span class="badge-up">▲ +{pct_avg:.1f}%</span> vs prom ({format_kpi_value(avg_total, kpi)})'
                     elif pct_avg < 0:
-                        var_avg_html = f'<span class="badge-down">▼ {pct_avg:.1f}%</span> vs prom ({avg_total:,.0f})'
+                        var_avg_html = f'<span class="badge-down">▼ {pct_avg:.1f}%</span> vs prom ({format_kpi_value(avg_total, kpi)})'
                     else:
-                        var_avg_html = f'<span class="badge-neutral">= prom ({avg_total:,.0f})</span>'
+                        var_avg_html = f'<span class="badge-neutral">= prom ({format_kpi_value(avg_total, kpi)})</span>'
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
-                # REGLA SIMPLIFICADA DE COLOR DE FONDO (SÓLO VS SEMANA ANTERIOR)
+                # REGLA DE COLOR DE FONDO (VS SEMANA ANTERIOR)
                 if pct_prev is not None:
                     if pct_prev > 0:
-                        bg_color_class = "kpi-bg-up"      # Pistacho (#E1FFC9) si subió
+                        bg_color_class = "kpi-bg-up"      # Pistacho (#E1FFC9)
                     elif pct_prev < 0:
-                        bg_color_class = "kpi-bg-drop"    # Rojo Vino Fridolin (#7A1C29) si bajó
+                        bg_color_class = "kpi-bg-drop"    # Rojo Vino Fridolin (#7A1C29)
                     else:
-                        bg_color_class = "kpi-bg-neutral" # Marfil si quedó igual
+                        bg_color_class = "kpi-bg-neutral"
                 else:
-                    bg_color_class = "kpi-bg-neutral"     # Marfil si no hay datos comparables
+                    bg_color_class = "kpi-bg-neutral"
 
-                # Se toma el tipo de formato detectado directamente desde el Excel/Google Sheet
-                if is_percent_val:
-                    val_formatted = f"{val_curr * 100:.2f}%" if val_curr <= 1 else f"{val_curr:.2f}%"
-                elif "Bs" in str(raw_val_sheet):
-                    val_formatted = f"Bs {val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"Bs {val_curr:,.2f}"
-                else:
-                    val_formatted = f"{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{val_curr:,.2f}"
+                # FORMATEO DICCIONARIO ESTRICCTO
+                val_formatted = format_kpi_value(val_curr, kpi)
                 
                 breakdown_html = ""
                 if df_current_rows is not None and not df_current_rows.empty:
@@ -517,16 +559,7 @@ if menu_option == "📊 Dashboards KPIs":
                         for _, row_cat in categories_rows.iterrows():
                             c_name = row_cat['Categoria_Clean']
                             c_val = row_cat['Valor']
-                            c_is_pct = row_cat['Is_Percent']
-                            c_raw = str(row_cat['Valor_Raw'])
-                            
-                            if c_is_pct:
-                                c_formatted = f"{c_val * 100:.2f}%" if c_val <= 1 else f"{c_val:.2f}%"
-                            elif "Bs" in c_raw:
-                                c_formatted = f"Bs {c_val:,.0f}" if (c_val >= 100 or c_val % 1 == 0) else f"Bs {c_val:,.2f}"
-                            else:
-                                c_formatted = f"{c_val:,.0f}" if (c_val >= 100 or c_val % 1 == 0) else f"{c_val:,.2f}"
-                                
+                            c_formatted = format_kpi_value(c_val, kpi)
                             items_html += f'<div class="kpi-breakdown-row"><span class="kpi-breakdown-cat">{c_name}</span><span class="kpi-breakdown-num">{c_formatted}</span></div>'
                         
                         breakdown_html = f'<div class="kpi-breakdown-box">{items_html}</div>'
