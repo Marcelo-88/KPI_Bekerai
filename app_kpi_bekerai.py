@@ -1444,19 +1444,21 @@ elif menu_option == "📝 Gestión de Tareas":
                 if f_entrega and f_entrega != "nan" and f_entrega != "None":
                     date_str += f" | 🏁 Entrega: <b>{f_entrega}</b>"
 
-                rows_html += f"""<div class="task-row {row_class}">
-<div style="display: flex; justify-content: space-between; align-items: flex-start;">
-<div class="task-title">{row['TAREA']}</div>
-<div>
-<span class="task-badge {badge_class}">{badge_icon} {estado}</span>
-<span class="task-badge badge-dept">🏢 {row['Departamento']}</span>
-</div>
-</div>
-<div class="task-meta">
-<div class="task-meta-item">👥 <b>Equipo:</b> {equipo_str}</div>
-<div class="task-meta-item" style="margin-left: auto;">{date_str}</div>
-</div>
-</div>"""
+                rows_html += (
+                    f'<div class="task-row {row_class}">'
+                    f'<div style="display: flex; justify-content: space-between; align-items: flex-start;">'
+                    f'<div class="task-title">{row["TAREA"]}</div>'
+                    f'<div>'
+                    f'<span class="task-badge {badge_class}">{badge_icon} {estado}</span>'
+                    f'<span class="task-badge badge-dept">🏢 {row["Departamento"]}</span>'
+                    f'</div>'
+                    f'</div>'
+                    f'<div class="task-meta">'
+                    f'<div class="task-meta-item">👥 <b>Equipo:</b> {equipo_str}</div>'
+                    f'<div class="task-meta-item" style="margin-left: auto;">{date_str}</div>'
+                    f'</div>'
+                    f'</div>'
+                )
 
             container_html = f'<div class="task-container-card">{rows_html}</div>'
             st.markdown(container_html, unsafe_allow_html=True)
@@ -1512,23 +1514,16 @@ elif menu_option == "📝 Gestión de Tareas":
                 for idx_k, r_name in enumerate(chunk_keys):
                     st_data = resp_stats[r_name]
                     with cols_r[idx_k]:
-                        summary_html = f"""<div class="resp-summary-card">
-<div class="resp-summary-name">👤 {r_name}</div>
-<div class="resp-stat-grid">
-<div>
-<div style="color: #C0392B;">Pend.</div>
-<div class="resp-stat-num" style="color: #C0392B;">{st_data['Pendientes']}</div>
-</div>
-<div>
-<div style="color: #D68910;">Proceso</div>
-<div class="resp-stat-num" style="color: #D68910;">{st_data['En Proceso']}</div>
-</div>
-<div>
-<div style="color: #1E8449;">Fin.</div>
-<div class="resp-stat-num" style="color: #1E8449;">{st_data['Finalizadas']}</div>
-</div>
-</div>
-</div>"""
+                        summary_html = (
+                            f'<div class="resp-summary-card">'
+                            f'<div class="resp-summary-name">👤 {r_name}</div>'
+                            f'<div class="resp-stat-grid">'
+                            f'<div><div style="color: #C0392B;">Pend.</div><div class="resp-stat-num" style="color: #C0392B;">{st_data["Pendientes"]}</div></div>'
+                            f'<div><div style="color: #D68910;">Proceso</div><div class="resp-stat-num" style="color: #D68910;">{st_data["En Proceso"]}</div></div>'
+                            f'<div><div style="color: #1E8449;">Fin.</div><div class="resp-stat-num" style="color: #1E8449;">{st_data["Finalizadas"]}</div></div>'
+                            f'</div>'
+                            f'</div>'
+                        )
                         st.markdown(summary_html, unsafe_allow_html=True)
 
 # ------------------------------------------
