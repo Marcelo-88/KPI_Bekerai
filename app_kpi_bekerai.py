@@ -233,7 +233,7 @@ def load_data():
     return df_kpi_long, df_tasks
 
 # ==========================================
-# 3. HELPER MEJORADO CON HOVER DETALLADO Y LEYENDA CLARA
+# 3. HELPER DE GRÁFICAS CON AUTO-ESCALA Y HOVER INDIVIDUAL
 # ==========================================
 def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores"):
     fig = go.Figure()
@@ -256,11 +256,10 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             
         color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
         
-        # Formato dinámico del valor en la nube flotante (Hover)
         is_money = "Bs" in unit_label or any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR'])
         val_prefix = "Bs " if is_money else ""
         
-        # Nube Flotante (Hover Template) personalizada y legible
+        # Etiqueta individual para la línea sobre la que se asoma el mouse
         hover_template = (
             f"<b>{kpi}</b><br>"
             "🗓️ %{x}<br>"
@@ -295,16 +294,18 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             title=dict(text=unit_label, font=dict(size=12, color="#4A4644")), 
             showgrid=True, 
             gridcolor="#EFECE6",
-            tickformat=",.0f"
+            tickformat=",.0f",
+            autorange=True # Fuerza la autoescala dinámica del eje Y al filtrar/cambiar series
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='#FFFFFF',
         height=height,
-        hovermode="x unified", # Nube combinada al pasar sobre el eje X
+        hovermode="closest", # SOLO MUESTRA LA LÍNEA SOBRE LA QUE ESTÁ EL MOUSE (Evita la lista gigante)
         hoverlabel=dict(
             bgcolor="#FFFFFF",
             font_size=12,
-            font_family="sans-serif"
+            font_family="sans-serif",
+            bordercolor="#7A1C29"
         ),
         legend=dict(
             orientation="h",
@@ -312,7 +313,7 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             y=-0.28,
             xanchor="center",
             x=0.5,
-            bgcolor="rgba(255,255,255,0.8)",
+            bgcolor="rgba(255,255,255,0.85)",
             bordercolor="#DFD9CE",
             borderwidth=1,
             font=dict(size=11, color="#2D2B2A")
