@@ -41,53 +41,50 @@ FRIDOLIN_CSS = """
         transition: all 0.2s ease;
     }
 
-    /* VARIACIONES DE COLOR SEGÚN DESEMPEÑO */
-    /* 1. Caída vs Promedio -> Rojo Vino Fridolin */
-    .kpi-bg-drop-avg {
+    /* VARIACIONES SIMPLIFICADAS DE COLOR (SOLO VS SEMANA ANTERIOR) */
+    
+    /* 1. Bajó vs Semana Anterior -> Rojo Vino Fridolin */
+    .kpi-bg-drop {
         background-color: #7A1C29 !important;
         border-color: #58131D !important;
         color: #FFFFFF !important;
     }
-    .kpi-bg-drop-avg .kpi-card-header { color: #FADBD8 !important; }
-    .kpi-bg-drop-avg .kpi-card-val { color: #FFFFFF !important; }
-    .kpi-bg-drop-avg .kpi-resp-tag { color: #F5CBA7 !important; }
-    .kpi-bg-drop-avg .badge-up { color: #2ECC71 !important; font-weight: 700; }
-    .kpi-bg-drop-avg .badge-down { color: #F1948A !important; font-weight: 700; }
-    .kpi-bg-drop-avg .badge-neutral { color: #EAEDED !important; }
-    .kpi-bg-drop-avg .kpi-breakdown-box { background-color: rgba(255, 255, 255, 0.15) !important; border-color: rgba(255, 255, 255, 0.25) !important; }
-    .kpi-bg-drop-avg .kpi-breakdown-cat { color: #FADBD8 !important; }
-    .kpi-bg-drop-avg .kpi-breakdown-num { color: #FFFFFF !important; }
-    .kpi-bg-drop-avg .kpi-card-footer { border-top-color: rgba(255, 255, 255, 0.2) !important; }
+    .kpi-bg-drop .kpi-card-header { color: #FADBD8 !important; }
+    .kpi-bg-drop .kpi-card-val { color: #FFFFFF !important; }
+    .kpi-bg-drop .kpi-resp-tag { color: #F5CBA7 !important; }
+    .kpi-bg-drop .badge-up { color: #2ECC71 !important; font-weight: 700; }
+    .kpi-bg-drop .badge-down { color: #F1948A !important; font-weight: 700; }
+    .kpi-bg-drop .badge-neutral { color: #EAEDED !important; }
+    .kpi-bg-drop .kpi-breakdown-box { background-color: rgba(255, 255, 255, 0.15) !important; border-color: rgba(255, 255, 255, 0.25) !important; }
+    .kpi-bg-drop .kpi-breakdown-cat { color: #FADBD8 !important; }
+    .kpi-bg-drop .kpi-breakdown-num { color: #FFFFFF !important; }
+    .kpi-bg-drop .kpi-card-footer { border-top-color: rgba(255, 255, 255, 0.2) !important; }
 
-    /* 2. Caída vs Semana Anterior -> Marfil Oscuro */
-    .kpi-bg-drop-prev {
+    /* 2. Subió vs Semana Anterior -> Tono Pistacho (#E1FFC9) */
+    .kpi-bg-up {
+        background-color: #E1FFC9 !important;
+        border-color: #C2E8A3 !important;
+        color: #1E4620 !important;
+    }
+    .kpi-bg-up .kpi-card-header { color: #2C5E2E !important; }
+    .kpi-bg-up .kpi-card-val { color: #1E4620 !important; }
+    .kpi-bg-up .kpi-resp-tag { color: #4A7A4C !important; }
+    .kpi-bg-up .badge-up { color: #1E8449 !important; font-weight: 700; }
+    .kpi-bg-up .badge-down { color: #C0392B !important; font-weight: 700; }
+    .kpi-bg-up .badge-neutral { color: #526E54 !important; }
+    .kpi-bg-up .kpi-breakdown-box { background-color: rgba(255, 255, 255, 0.6) !important; border-color: #C2E8A3 !important; }
+    .kpi-bg-up .kpi-breakdown-cat { color: #335C35 !important; }
+    .kpi-bg-up .kpi-breakdown-num { color: #1E4620 !important; }
+
+    /* 3. Neutral / Sin Datos para comparar -> Marfil Oscuro */
+    .kpi-bg-neutral {
         background-color: #EDE7D9 !important;
         border-color: #D3CBBE !important;
         color: #2D2B2A !important;
     }
-
-    /* 3. Subida vs Promedio -> Verde Pastel Oscuro */
-    .kpi-bg-up-avg {
-        background-color: #A3E4D7 !important;
-        border-color: #76D7C4 !important;
-        color: #0E6251 !important;
-    }
-    .kpi-bg-up-avg .kpi-card-header { color: #0B5345 !important; }
-    .kpi-bg-up-avg .kpi-card-val { color: #0B5345 !important; }
-    .kpi-bg-up-avg .kpi-breakdown-box { background-color: rgba(255, 255, 255, 0.5) !important; border-color: #76D7C4 !important; }
-
-    /* 4. Subida vs Semana Anterior -> Verde Pastel Claro */
-    .kpi-bg-up-prev {
-        background-color: #E8F8F5 !important;
-        border-color: #A3E4D7 !important;
-        color: #117A65 !important;
-    }
-
-    /* 5. Fondo Estándar Blanco */
-    .kpi-bg-neutral {
-        background-color: #FFFFFF !important;
-        border-color: #E6E1D7 !important;
-    }
+    .kpi-bg-neutral .kpi-card-header { color: #4A4644 !important; }
+    .kpi-bg-neutral .kpi-card-val { color: #7A1C29 !important; }
+    .kpi-bg-neutral .kpi-resp-tag { color: #8A6D3B !important; }
 
     /* BORDE DE FALLBACK PARA SEMANAS HISTÓRICAS */
     .kpi-border-fallback {
@@ -95,26 +92,26 @@ FRIDOLIN_CSS = """
         box-shadow: 0 2px 6px rgba(230, 162, 60, 0.18) !important;
     }
 
-    .kpi-card-header { font-size: 0.85rem; font-weight: 700; color: #4A4644; text-transform: uppercase; line-height: 1.1; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .kpi-card-val { font-size: 1.55rem; font-weight: 800; color: #7A1C29; margin: 0.1rem 0 0.3rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .kpi-card-header { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; line-height: 1.1; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-card-val { font-size: 1.55rem; font-weight: 800; margin: 0.1rem 0 0.3rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
     
     /* DESGLOSE DE CATEGORÍAS */
     .kpi-breakdown-box {
-        background-color: #F8F6F0; border-radius: 6px; padding: 0.35rem 0.5rem;
+        border-radius: 6px; padding: 0.35rem 0.5rem;
         margin: 0.3rem 0 0.4rem 0; font-size: 0.74rem; display: flex; flex-direction: column; gap: 0.15rem;
-        border: 1px solid #EAE6DD;
+        border: 1px solid rgba(0,0,0,0.08);
     }
     .kpi-breakdown-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 1px; }
     .kpi-breakdown-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .kpi-breakdown-cat { font-weight: 600; color: #55514E; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .kpi-breakdown-num { font-weight: 700; color: #2D2B2A; }
+    .kpi-breakdown-cat { font-weight: 600; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kpi-breakdown-num { font-weight: 700; }
 
     .kpi-card-footer { font-size: 0.73rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.3rem; margin-top: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem; }
     .badge-up { color: #27AE60; font-weight: 600; }
     .badge-down { color: #C0392B; font-weight: 600; }
     .badge-neutral { color: #7F8C8D; font-weight: 500; }
     .badge-warning { color: #D35400; font-weight: 700; background: #FDEBD0; padding: 1px 5px; border-radius: 4px; font-size: 0.68rem; display: inline-block; }
-    .kpi-resp-tag { font-size: 0.73rem; color: #A07828; font-weight: 600; margin-bottom: 0.1rem; }
+    .kpi-resp-tag { font-size: 0.73rem; font-weight: 600; margin-bottom: 0.1rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
 
     /* CONTENEDOR ÚNICO PARA TAREAS */
@@ -486,16 +483,16 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
-                # DETERMINACIÓN DEL COLOR DINÁMICO DE FONDO
-                bg_color_class = "kpi-bg-neutral"
-                if pct_avg is not None and pct_avg < 0:
-                    bg_color_class = "kpi-bg-drop-avg"      # Rojo Vino Fridolin (Bajó vs Promedio)
-                elif pct_prev is not None and pct_prev < 0:
-                    bg_color_class = "kpi-bg-drop-prev"     # Marfil Oscuro (Bajó vs Semana Anterior)
-                elif pct_avg is not None and pct_avg > 0:
-                    bg_color_class = "kpi-bg-up-avg"        # Verde Pastel Oscuro (Superó Promedio)
-                elif pct_prev is not None and pct_prev > 0:
-                    bg_color_class = "kpi-bg-up-prev"       # Verde Pastel Claro (Superó Sem Anterior)
+                # REGLA SIMPLIFICADA DE COLOR DE FONDO (SÓLO VS SEMANA ANTERIOR)
+                if pct_prev is not None:
+                    if pct_prev > 0:
+                        bg_color_class = "kpi-bg-up"      # Pistacho (#E1FFC9) si subió
+                    elif pct_prev < 0:
+                        bg_color_class = "kpi-bg-drop"    # Rojo Vino Fridolin (#7A1C29) si bajó
+                    else:
+                        bg_color_class = "kpi-bg-neutral" # Marfil si quedó igual
+                else:
+                    bg_color_class = "kpi-bg-neutral"     # Marfil si no hay datos comparables
 
                 is_money = any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR', 'PRECIO'])
                 prefix = "Bs " if is_money else ""
