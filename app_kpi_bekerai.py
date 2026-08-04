@@ -53,7 +53,7 @@ FRIDOLIN_CSS = """
         padding: 1.1rem;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
         margin-bottom: 1rem;
-        height: 100%;
+        min-height: 220px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -67,7 +67,7 @@ FRIDOLIN_CSS = """
         padding: 1.1rem;
         box-shadow: 0 4px 6px rgba(230, 162, 60, 0.1);
         margin-bottom: 1rem;
-        height: 100%;
+        min-height: 220px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -101,7 +101,7 @@ FRIDOLIN_CSS = """
     .badge-up { color: #2E7D32; font-weight: 600; }
     .badge-down { color: #C62828; font-weight: 600; }
     .badge-neutral { color: #757575; font-weight: 500; }
-    .badge-warning { color: #D97706; font-weight: 700; background: #FEF3C7; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+    .badge-warning { color: #D97706; font-weight: 700; background: #FEF3C7; padding: 3px 6px; border-radius: 4px; display: inline-block; font-size: 0.72rem; }
     
     .kpi-resp-tag {
         font-size: 0.73rem;
@@ -240,7 +240,6 @@ if menu_option == "📊 Dashboards KPIs":
 
         current_week_idx = semanas_unicas.index(selected_week)
         
-        # Filtrar responsabilidades
         df_all_selected = df_kpis.copy()
         if selected_resp != "Todos":
             df_all_selected = df_all_selected[df_all_selected['Responsable'] == selected_resp]
@@ -255,12 +254,11 @@ if menu_option == "📊 Dashboards KPIs":
                 df_kpi_series = df_kpis[df_kpis['Medible'] == kpi]
                 resp = df_kpi_series['Responsable'].dropna().values[0] if not df_kpi_series.empty else "-"
                 
-                # --- BUSCADOR DEL ÚLTIMO DATO VÁLIDO (FALLBACK) ---
+                # BUSCAR EL ÚLTIMO DATO VÁLIDO (> 0) HACIA ATRÁS
                 val_curr = 0.0
                 actual_data_week = selected_week
                 is_fallback = False
                 
-                # Recorrer hacia atrás desde la semana seleccionada
                 for w_idx in range(current_week_idx, -1, -1):
                     w_name = semanas_unicas[w_idx]
                     row_w = df_kpi_series[df_kpi_series['Semana'] == w_name]
@@ -273,8 +271,9 @@ if menu_option == "📊 Dashboards KPIs":
                                 is_fallback = True
                             break
                             
-                # --- BUSCAR VALOR DE LA SEMANA ANTERIOR A LA DEL DATO ENCONTRADO ---
+                # BUSCAR VALOR DE LA SEMANA PREVIA A LA DEL DATO ENCONTRADO
                 val_prev = None
+                prev_w_name = ""
                 actual_week_idx_found = semanas_unicas.index(actual_data_week) if actual_data_week in semanas_unicas else -1
                 if actual_week_idx_found > 0:
                     prev_w_name = semanas_unicas[actual_week_idx_found - 1]
@@ -282,7 +281,7 @@ if menu_option == "📊 Dashboards KPIs":
                     if not row_prev.empty:
                         val_prev = float(row_prev['Valor'].values[0])
                 
-                # Cálculo % vs Semana Anterior
+                # Variación % vs Semana Anterior
                 if val_prev is not None and val_prev != 0 and val_curr != 0:
                     pct_prev = ((val_curr - val_prev) / val_prev) * 100
                     if pct_prev > 0:
@@ -294,7 +293,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
                     
-                # Cálculo % vs Promedio Histórico Total (Solo valores > 0)
+                # Variación % vs Promedio Total
                 valid_vals = df_kpi_series[df_kpi_series['Valor'] > 0]['Valor']
                 avg_total = valid_vals.mean() if not valid_vals.empty else 0.0
                 
@@ -309,13 +308,13 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
-                # Formateo del valor
+                # Formateo Numérico
                 if val_curr >= 1000 or val_curr % 1 == 0:
                     val_formatted = f"{val_curr:,.0f}"
                 else:
                     val_formatted = f"{val_curr:,.2f}"
                 
-                # --- DEFINIR ESTILO Y ETIQUETA SEGÚN SI ES DATO ACTUAL O FALLBACK ---
+                # Configurar clases HTML sin indentaciones para evitar fallos en Streamlit
                 if is_fallback:
                     card_class = "kpi-card-fallback"
                     fallback_tag = f'<div style="margin-bottom:0.3rem;"><span class="badge-warning">⚠️ DATO CORRESPONDE A {actual_data_week}</span></div>'
@@ -323,21 +322,23 @@ if menu_option == "📊 Dashboards KPIs":
                     card_class = "kpi-card"
                     fallback_tag = ""
                 
+                html_code = (
+                    f'<div class="{card_class}">'
+                    f'<div>'
+                    f'<div class="kpi-card-header">{kpi}</div>'
+                    f'<div class="kpi-resp-tag">👤 Resp: {resp}</div>'
+                    f'{fallback_tag}'
+                    f'<div class="kpi-card-val">{val_formatted}</div>'
+                    f'</div>'
+                    f'<div class="kpi-card-footer">'
+                    f'<div>{var_prev_html}</div>'
+                    f'<div>{var_avg_html}</div>'
+                    f'</div>'
+                    f'</div>'
+                )
+                
                 with cols[idx % 4]:
-                    st.markdown(f"""
-                    <div class="{card_class}">
-                        <div>
-                            <div class="kpi-card-header">{kpi}</div>
-                            <div class="kpi-resp-tag">👤 Resp: {resp}</div>
-                            {fallback_tag}
-                            <div class="kpi-card-val">{val_formatted}</div>
-                        </div>
-                        <div class="kpi-card-footer">
-                            <div>{var_prev_html}</div>
-                            <div>{var_avg_html}</div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(html_code, unsafe_allow_html=True)
         else:
             st.info("No hay métricas disponibles para el filtro seleccionado.")
                 
