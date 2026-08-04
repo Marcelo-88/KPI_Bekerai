@@ -53,17 +53,32 @@ FRIDOLIN_CSS = """
     .kpi-resp-tag { font-size: 0.75rem; color: #A07828; font-weight: 600; margin-bottom: 0.3rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
 
-    /* ESTILOS TAREAS TARJETAS */
-    .task-card {
-        background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 14px;
-        padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 3px 6px rgba(0,0,0,0.03);
-        border-left: 6px solid #7A1C29; transition: transform 0.2s ease;
+    /* CONTENEDOR ÚNICO PARA TAREAS */
+    .task-container-card {
+        background-color: #FFFFFF;
+        border: 1px solid #E2DCD2;
+        border-radius: 16px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        margin-bottom: 2rem;
     }
-    .task-card-pendiente { border-left-color: #E74C3C; }
-    .task-card-proceso { border-left-color: #F39C12; }
-    .task-card-finalizado { border-left-color: #27AE60; }
+
+    /* FILAS DE TAREAS DENTRO DEL CONTENEDOR ÚNICO */
+    .task-row {
+        padding: 1rem 0.5rem;
+        border-bottom: 1px solid #F0ECE3;
+        border-left: 5px solid transparent;
+        border-radius: 4px;
+        margin-bottom: 0.2rem;
+    }
+    .task-row:last-child {
+        border-bottom: none;
+    }
+    .task-row-pendiente { border-left-color: #E74C3C; }
+    .task-row-proceso { border-left-color: #F39C12; }
+    .task-row-finalizado { border-left-color: #27AE60; }
     
-    .task-title { font-size: 1rem; font-weight: 700; color: #2D2B2A; margin-bottom: 0.5rem; }
+    .task-title { font-size: 0.98rem; font-weight: 700; color: #2D2B2A; margin-bottom: 0.4rem; padding-left: 0.4rem; }
     .task-badge {
         display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.75rem;
         font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
@@ -73,7 +88,7 @@ FRIDOLIN_CSS = """
     .badge-status-finalizado { background-color: #E8F8F5; color: #1E8449; }
     .badge-dept { background-color: #EAECEE; color: #424949; font-weight: 600; margin-left: 6px; }
 
-    .task-meta { font-size: 0.83rem; color: #5D6D7E; margin-top: 0.6rem; display: flex; flex-wrap: wrap; gap: 12px; }
+    .task-meta { font-size: 0.83rem; color: #5D6D7E; margin-top: 0.4rem; padding-left: 0.4rem; display: flex; flex-wrap: wrap; gap: 12px; }
     .task-meta-item { display: flex; align-items: center; gap: 4px; }
     
     /* TARJETA RESUMEN RESPONSABLE */
@@ -472,26 +487,23 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     show_full_graph_dialog(df_kpis, selected_custom, "Selección Libre Personalizada", unit_label="Valores")
 
 # ------------------------------------------
-# MÓDULO 3: GESTIÓN DE TAREAS (REDiseño TARJETAS KANBAN + RESUMEN)
+# MÓDULO 3: GESTIÓN DE TAREAS (CONTENEDOR ÚNICO)
 # ------------------------------------------
 elif menu_option == "📝 Gestión de Tareas":
-    st.subheader("📝 Gestión de Tareas y Operaciones EOS")
+    st.subheader("📝 Lista de Tareas Operativas EOS")
     
     if not df_tasks.empty:
         # --- FILTROS ---
         f_col1, f_col2, f_col3 = st.columns(3)
         
-        # Filtro Estados
         estados_disponibles = sorted(list(df_tasks['Estado'].dropna().unique()))
         with f_col1:
             sel_estados = st.multiselect("📌 Filtrar por Estado:", estados_disponibles, default=estados_disponibles)
             
-        # Filtro Departamento
         deptos_disponibles = sorted(list(df_tasks['Departamento'].dropna().unique()))
         with f_col2:
             sel_deptos = st.multiselect("🏢 Filtrar por Departamento:", deptos_disponibles, default=deptos_disponibles)
             
-        # Filtro Responsable (Incluye Responsable 1, 2 o 3)
         all_resps = set(df_tasks['Responsable Principal'].dropna().tolist())
         if 'Responsable 2' in df_tasks.columns:
             all_resps.update(df_tasks['Responsable 2'].dropna().tolist())
@@ -519,26 +531,26 @@ elif menu_option == "📝 Gestión de Tareas":
         st.markdown(f"Mostrando **{len(df_filtered)}** de **{len(df_tasks)}** tareas en total.")
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- MOSTRAR TARJETAS ---
+        # --- RENDERIZADO EN TARJETA/CONTENEDOR ÚNICO ---
         if not df_filtered.empty:
+            rows_html = ""
             for _, row in df_filtered.iterrows():
                 estado = str(row.get('Estado', 'Pendiente')).strip()
                 estado_clean = estado.lower().replace(' ', '')
                 
                 if 'finaliz' in estado_clean or 'complet' in estado_clean:
-                    card_class = "task-card-finalizado"
+                    row_class = "task-row-finalizado"
                     badge_class = "badge-status-finalizado"
                     badge_icon = "🟢"
                 elif 'proceso' in estado_clean:
-                    card_class = "task-card-proceso"
+                    row_class = "task-row-proceso"
                     badge_class = "badge-status-proceso"
                     badge_icon = "🟡"
                 else:
-                    card_class = "task-card-pendiente"
+                    row_class = "task-row-pendiente"
                     badge_class = "badge-status-pendiente"
                     badge_icon = "🔴"
 
-                # Responsables auxiliares
                 r2 = str(row.get('Responsable 2', '')).strip()
                 r3 = str(row.get('Responsable 3', '')).strip()
                 equipo_str = f"<b>{row['Responsable Principal']}</b>"
@@ -547,7 +559,6 @@ elif menu_option == "📝 Gestión de Tareas":
                 if r3 and r3 != 'None' and r3 != 'nan':
                     equipo_str += f", {r3}"
 
-                # Fechas
                 f_inicio = str(row.get('Fecha Inicio', '')).replace('00:00:00', '').strip()
                 f_entrega = str(row.get('Fecha Entrega', '')).replace('00:00:00', '').strip()
                 
@@ -555,8 +566,8 @@ elif menu_option == "📝 Gestión de Tareas":
                 if f_entrega and f_entrega != 'nan' and f_entrega != 'None':
                     date_str += f" | 🏁 Entrega: <b>{f_entrega}</b>"
 
-                card_html = f"""
-                <div class="task-card {card_class}">
+                rows_html += f"""
+                <div class="task-row {row_class}">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div class="task-title">{row['TAREA']}</div>
                         <div>
@@ -570,7 +581,13 @@ elif menu_option == "📝 Gestión de Tareas":
                     </div>
                 </div>
                 """
-                st.markdown(card_html, unsafe_allow_html=True)
+
+            container_html = f"""
+            <div class="task-container-card">
+                {rows_html}
+            </div>
+            """
+            st.markdown(container_html, unsafe_allow_html=True)
         else:
             st.info("No hay tareas que coincidan con los filtros seleccionados.")
 
@@ -578,7 +595,6 @@ elif menu_option == "📝 Gestión de Tareas":
         st.markdown("---")
         st.markdown("### 📊 Vistazo Rápido: Resumen por Responsable")
         
-        # Calcular resumen de tareas por responsable
         resp_stats = {}
         for r in all_resps_list:
             if not r or r == 'None':
@@ -600,7 +616,6 @@ elif menu_option == "📝 Gestión de Tareas":
                 'Total': len(sub_resp)
             }
 
-        # Renderizar Tarjetas de Vistazo en Filas
         resp_keys = list(resp_stats.keys())
         if resp_keys:
             cols_per_row = 4
