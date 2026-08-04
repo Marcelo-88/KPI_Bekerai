@@ -109,6 +109,7 @@ st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 # ==========================================
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
+ONLINE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/edit"
 
 def parse_custom_number(val):
     if pd.isna(val) or val == "" or str(val).strip() == "":
@@ -288,8 +289,7 @@ menu_option = st.sidebar.radio(
         "📊 Dashboards KPIs", 
         "🔀 Comparador KPI vs KPI", 
         "📝 Gestión de Tareas", 
-        "🏆 Scorecard & Cumplimiento",
-        "🔍 Explorador Sheet (Debug)"
+        "🏆 Scorecard & Cumplimiento"
     ]
 )
 
@@ -297,6 +297,9 @@ st.sidebar.markdown("---")
 if st.sidebar.button("🔄 Actualizar Datos Ahora", use_container_width=True):
     st.cache_data.clear()
     st.sidebar.success("¡Datos actualizados!")
+
+# Botón para ir al Drive en línea
+st.sidebar.link_button("🌐 Abrir Sheet en Google Drive", ONLINE_SHEET_URL, use_container_width=True)
 
 try:
     df_kpis, df_tasks = load_data()
@@ -656,10 +659,3 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
         )
         fig_score.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF', yaxis=dict(range=[0, 100]))
         st.plotly_chart(fig_score, use_container_width=True, key="chart_scorecard")
-
-# ------------------------------------------
-# MÓDULO 5: EXPLORADOR SHEET
-# ------------------------------------------
-elif menu_option == "🔍 Explorador Sheet (Debug)":
-    st.subheader("🔍 Previsualización Directa de Datos Procesados")
-    st.dataframe(df_kpis, use_container_width=True)
