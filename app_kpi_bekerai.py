@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import re
 
 # ==========================================
-# 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS (FRIDOLIN)
+# 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS (MARFIL PASTEL)
 # ==========================================
 st.set_page_config(
     page_title="Fridolin - KPI Bekerai 2026",
@@ -14,20 +14,35 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Paleta de colores Pastel con alto contraste para gráficos
+PASTEL_COLORS = [
+    '#C0392B',  # Bordó / Tinto Fridolin
+    '#2980B9',  # Azul Pastel Profundo
+    '#27AE60',  # Verde Menta / Esmeralda
+    '#D35400',  # Naranja Calido / Melocotón
+    '#8E44AD',  # Lavanda / Purpura Pastel
+    '#16A085',  # Turquesa Pastel
+    '#F39C12',  # Dorado Suave
+    '#E74C3C',  # Coral Pastel
+    '#34495E',  # Gris Azulado Pastel
+    '#D4AC0D'   # Mostaza Suave
+]
+
 FRIDOLIN_CSS = """
 <style>
+    /* Fondo principal Marfil Elegante */
     .stApp {
-        background-color: #FAF6F0;
-        color: #2C2C2C;
+        background-color: #F7F4EE;
+        color: #2D2B2A;
     }
     .main-header {
-        background-color: #801B2B;
+        background-color: #7A1C29;
         padding: 1.2rem;
         border-radius: 14px;
         color: #FFFFFF;
         text-align: center;
         margin-bottom: 1.5rem;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 12px rgba(122, 28, 41, 0.15);
     }
     .main-header h1 {
         color: #FFFDF9 !important;
@@ -36,23 +51,23 @@ FRIDOLIN_CSS = """
         font-weight: 700;
     }
     .main-header p {
-        color: #E2C08A !important;
+        color: #E6C894 !important;
         margin-top: 5px;
         margin-bottom: 0;
         font-size: 0.95rem;
     }
     section[data-testid="stSidebar"] {
-        background-color: #F3ECE1 !important;
-        border-right: 1px solid #E0D6C8;
+        background-color: #EFECE4 !important;
+        border-right: 1px solid #DFD9CE;
     }
     
     /* TARJETAS KPI DASHBOARD */
     .kpi-card {
         background-color: #FFFFFF;
-        border: 1px solid #E5E0D8;
+        border: 1px solid #E6E1D7;
         border-radius: 16px;
         padding: 1.1rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
         margin-bottom: 1rem;
         min-height: 220px;
         display: flex;
@@ -61,11 +76,11 @@ FRIDOLIN_CSS = """
     }
 
     .kpi-card-fallback {
-        background-color: #FFFDF2;
+        background-color: #FFFDF5;
         border: 2px dashed #E6A23C;
         border-radius: 16px;
         padding: 1.1rem;
-        box-shadow: 0 4px 6px rgba(230, 162, 60, 0.1);
+        box-shadow: 0 4px 8px rgba(230, 162, 60, 0.12);
         margin-bottom: 1rem;
         min-height: 220px;
         display: flex;
@@ -74,9 +89,9 @@ FRIDOLIN_CSS = """
     }
 
     .kpi-card-header {
-        font-size: 0.78rem;
+        font-size: 0.82rem;
         font-weight: 700;
-        color: #555555;
+        color: #4A4644;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 0.3rem;
@@ -86,7 +101,7 @@ FRIDOLIN_CSS = """
     .kpi-card-val {
         font-size: 1.65rem;
         font-weight: 800;
-        color: #801B2B;
+        color: #7A1C29;
         margin-bottom: 0.4rem;
         font-variant-numeric: tabular-nums;
     }
@@ -94,18 +109,18 @@ FRIDOLIN_CSS = """
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
-        font-size: 0.76rem;
-        border-top: 1px solid #F0EAE1;
+        font-size: 0.78rem;
+        border-top: 1px solid #F0ECE3;
         padding-top: 0.5rem;
     }
-    .badge-up { color: #2E7D32; font-weight: 600; }
-    .badge-down { color: #C62828; font-weight: 600; }
-    .badge-neutral { color: #757575; font-weight: 500; }
-    .badge-warning { color: #D97706; font-weight: 700; background: #FEF3C7; padding: 3px 6px; border-radius: 4px; display: inline-block; font-size: 0.72rem; }
+    .badge-up { color: #27AE60; font-weight: 600; }
+    .badge-down { color: #C0392B; font-weight: 600; }
+    .badge-neutral { color: #7F8C8D; font-weight: 500; }
+    .badge-warning { color: #D35400; font-weight: 700; background: #FDEBD0; padding: 3px 6px; border-radius: 4px; display: inline-block; font-size: 0.72rem; }
     
     .kpi-resp-tag {
-        font-size: 0.73rem;
-        color: #A67C1E;
+        font-size: 0.75rem;
+        color: #A07828;
         font-weight: 600;
         margin-bottom: 0.3rem;
     }
@@ -113,7 +128,7 @@ FRIDOLIN_CSS = """
     .compare-card-title {
         font-size: 1.05rem;
         font-weight: 700;
-        color: #801B2B;
+        color: #7A1C29;
         margin-bottom: 0.5rem;
     }
 </style>
@@ -121,7 +136,7 @@ FRIDOLIN_CSS = """
 st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CARGA Y LIMPIEZA DE DATOS (MONEDA Y PORCENTAJES)
+# 2. CARGA Y LIMPIEZA DE DATOS
 # ==========================================
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
@@ -137,13 +152,11 @@ def parse_custom_number(val):
         
     is_percent = '%' in val_str
     
-    # Limpiar caracteres no numéricos dejando solo dígitos, guión negativo, puntos y comas
     cleaned = re.sub(r'[^0-9,\.\-]', '', val_str)
     
     if not cleaned:
         return 0.0
         
-    # Formato latino estándar en Sheets (1.000,00 -> 1000.00)
     if ',' in cleaned and '.' in cleaned:
         cleaned = cleaned.replace('.', '').replace(',', '.')
     elif ',' in cleaned:
@@ -186,7 +199,6 @@ def load_data():
                 value_name='Valor'
             )
             
-            # Limpieza exacta de cada celda
             df_kpi_long['Valor'] = df_kpi_long['Valor'].apply(parse_custom_number)
             df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
             df_kpi_long = df_kpi_long[df_kpi_long['Medible'].notna() & (df_kpi_long['Medible'] != 'nan')]
@@ -221,18 +233,19 @@ def load_data():
     return df_kpi_long, df_tasks
 
 # ==========================================
-# 3. HELPER PARA DIBUJAR GRÁFICAS (ESCALA ÚNICA)
+# 3. HELPER MEJORADO CON HOVER DETALLADO Y LEYENDA CLARA
 # ==========================================
 def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores"):
     fig = go.Figure()
-    colors = ['#801B2B', '#E6A23C', '#2E7D32', '#1E88E5', '#8E24AA', '#D81B60', '#00ACC1', '#F4511E', '#3949AB', '#43A047']
     
     existing_kpis = [k for k in kpi_list if k in df_kpis['Medible'].values]
     
     if not existing_kpis:
-        fig.add_annotation(text="No se encontraron datos coincidentes para los KPIs seleccionados",
-                           xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False,
-                           font=dict(size=14, color="#801B2B"))
+        fig.add_annotation(
+            text="Selecciona al menos una categoría o KPI para visualizar",
+            xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False,
+            font=dict(size=14, color="#7A1C29")
+        )
         fig.update_layout(height=height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF')
         return fig
 
@@ -241,43 +254,70 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         if sub_df.empty:
             continue
             
-        color = colors[idx % len(colors)]
+        color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
+        
+        # Formato dinámico del valor en la nube flotante (Hover)
+        is_money = "Bs" in unit_label or any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR'])
+        val_prefix = "Bs " if is_money else ""
+        
+        # Nube Flotante (Hover Template) personalizada y legible
+        hover_template = (
+            f"<b>{kpi}</b><br>"
+            "🗓️ %{x}<br>"
+            f"📊 Valor: <b>{val_prefix}%{{y:,.2f}}</b>"
+            "<extra></extra>"
+        )
         
         fig.add_trace(go.Scatter(
             x=sub_df['Semana'],
             y=sub_df['Valor'],
             name=str(kpi),
             mode='lines+markers',
-            line=dict(color=color, width=2.5),
-            marker=dict(size=6)
+            line=dict(color=color, width=3),
+            marker=dict(size=7, color=color, symbol='circle'),
+            hovertemplate=hover_template
         ))
         
     fig.update_layout(
         title=dict(
             text=f"<b>{title}</b>",
-            font=dict(size=14, color="#801B2B"),
+            font=dict(size=15, color="#7A1C29"),
             x=0,
             y=0.98
         ),
-        xaxis=dict(title=None, tickangle=-45),
+        xaxis=dict(
+            title=None, 
+            tickangle=-45,
+            showgrid=True,
+            gridcolor="#EFECE6"
+        ),
         yaxis=dict(
-            title=unit_label, 
+            title=dict(text=unit_label, font=dict(size=12, color="#4A4644")), 
             showgrid=True, 
-            gridcolor="#F0EAE1",
+            gridcolor="#EFECE6",
             tickformat=",.0f"
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='#FFFFFF',
         height=height,
+        hovermode="x unified", # Nube combinada al pasar sobre el eje X
+        hoverlabel=dict(
+            bgcolor="#FFFFFF",
+            font_size=12,
+            font_family="sans-serif"
+        ),
         legend=dict(
             orientation="h",
             yanchor="top",
             y=-0.28,
             xanchor="center",
             x=0.5,
-            font=dict(size=10)
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="#DFD9CE",
+            borderwidth=1,
+            font=dict(size=11, color="#2D2B2A")
         ),
-        margin=dict(l=50, r=30, t=50, b=110)
+        margin=dict(l=55, r=30, t=50, b=110)
     )
     return fig
 
@@ -285,7 +325,7 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
 if hasattr(st, "dialog"):
     @st.dialog("🔍 Vista Ampliada del Gráfico", width="large")
     def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores"):
-        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=580, unit_label=unit_label)
+        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=600, unit_label=unit_label)
         st.plotly_chart(fig, use_container_width=True, key=f"dialog_{title}")
 else:
     def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores"):
@@ -416,7 +456,6 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
-                # Detectar si es moneda o valor entero
                 is_money = any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR', 'PRECIO'])
                 prefix = "Bs " if is_money else ""
                 val_formatted = f"{prefix}{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{prefix}{val_curr:,.2f}"
@@ -477,19 +516,25 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             if st.button("🔍 Maximizar Gráfico 1", key="btn_max_1", use_container_width=True):
                 show_full_graph_dialog(df_kpis, kpi_g1, "1. Ventas vs Pagos vs CxP vs Balance Efectivo (Bs)", unit_label="Monto en Bs")
 
-        # --- TARJETA 2: PRODUCCIÓN, ENVÍOS Y BAJAS ---
+        # --- TARJETA 2: PRODUCCIÓN, ENVÍOS Y BAJAS (SELECCIÓN MÚLTIPLE) ---
         with c2:
             st.markdown('<div class="compare-card-title">🍰 2. Producción, Envíos y Bajas por Categoría</div>', unsafe_allow_html=True)
             
             categorias_bekerai = ["Tortas", "Pasteles Individuales", "Postres Enteros", "Panaderia", "Salado"]
-            selected_cat = st.selectbox("Seleccionar Categoría de Producto:", categorias_bekerai, index=0)
             
-            kpi_g2 = find_kpis_matching([selected_cat])
+            # Selector Múltiple
+            selected_cats = st.multiselect(
+                "Seleccionar Categorías a Comparar:", 
+                categorias_bekerai, 
+                default=["Tortas"]
+            )
             
-            fig2 = render_multi_kpi_chart(df_kpis, kpi_g2, title=f"Flujo Categoría: {selected_cat}", height=380, unit_label="Unidades")
+            kpi_g2 = find_kpis_matching(selected_cats) if selected_cats else []
+            
+            fig2 = render_multi_kpi_chart(df_kpis, kpi_g2, title="Flujo de Categorías Seleccionadas", height=380, unit_label="Unidades")
             st.plotly_chart(fig2, use_container_width=True, key="card_2_main")
             if st.button("🔍 Maximizar Gráfico 2", key="btn_max_2", use_container_width=True):
-                show_full_graph_dialog(df_kpis, kpi_g2, f"Flujo Completo: {selected_cat}", unit_label="Unidades")
+                show_full_graph_dialog(df_kpis, kpi_g2, "Flujo de Categorías Seleccionadas", unit_label="Unidades")
 
         st.markdown("---")
         c3, c4 = st.columns(2)
@@ -502,7 +547,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             if st.button("🔍 Maximizar Gráfico 3", key="btn_max_3", use_container_width=True):
                 show_full_graph_dialog(df_kpis, kpi_g3, "3. Inversión Marketing vs Ventas (Bs)", unit_label="Monto en Bs")
 
-        # --- TARJETA 4: COMPARADOR PERSONALIZADO ---
+        # --- TARJETA 4: COMPARADOR PERSONALIZADO LIBRE ---
         with c4:
             st.markdown('<div class="compare-card-title">🛠️ 4. Comparador Libre</div>', unsafe_allow_html=True)
             
@@ -541,9 +586,9 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
         
         fig_score = px.bar(
             task_summary, x='Responsable Principal', y='% Cumplimiento', text='% Cumplimiento',
-            color='% Cumplimiento', color_continuous_scale=['#D9534F', '#F0AD4E', '#2E7D32']
+            color='% Cumplimiento', color_continuous_scale=['#C0392B', '#F39C12', '#27AE60']
         )
-        fig_score.update_layout(paper_bgcolor='#FAF6F0', plot_bgcolor='#FFFFFF', yaxis=dict(range=[0, 100]))
+        fig_score.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF', yaxis=dict(range=[0, 100]))
         st.plotly_chart(fig_score, use_container_width=True, key="chart_scorecard")
 
 # ------------------------------------------
