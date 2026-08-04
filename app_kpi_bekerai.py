@@ -32,25 +32,25 @@ FRIDOLIN_CSS = """
     .main-header p { color: #E6C894 !important; margin-top: 5px; margin-bottom: 0; font-size: 0.95rem; }
     section[data-testid="stSidebar"] { background-color: #EFECE4 !important; border-right: 1px solid #DFD9CE; }
     
-    /* ESTILOS KPIS */
+    /* ESTILOS KPIS COMPACTOS */
     .kpi-card {
-        background-color: #FFFFFF; border: 1px solid #E6E1D7; border-radius: 16px;
-        padding: 1.1rem; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04); margin-bottom: 1rem;
-        min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;
+        background-color: #FFFFFF; border: 1px solid #E6E1D7; border-radius: 12px;
+        padding: 0.6rem 0.8rem; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04); margin-bottom: 0.75rem;
+        min-height: 135px; display: flex; flex-direction: column; justify-content: space-between;
     }
     .kpi-card-fallback {
-        background-color: #FFFDF5; border: 2px dashed #E6A23C; border-radius: 16px;
-        padding: 1.1rem; box-shadow: 0 4px 8px rgba(230, 162, 60, 0.12); margin-bottom: 1rem;
-        min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;
+        background-color: #FFFDF5; border: 2px dashed #E6A23C; border-radius: 12px;
+        padding: 0.6rem 0.8rem; box-shadow: 0 2px 5px rgba(230, 162, 60, 0.12); margin-bottom: 0.75rem;
+        min-height: 135px; display: flex; flex-direction: column; justify-content: space-between;
     }
-    .kpi-card-header { font-size: 0.82rem; font-weight: 700; color: #4A4644; text-transform: uppercase; height: 2.2rem; overflow: hidden; }
-    .kpi-card-val { font-size: 1.65rem; font-weight: 800; color: #7A1C29; margin-bottom: 0.4rem; font-variant-numeric: tabular-nums; }
-    .kpi-card-footer { font-size: 0.78rem; border-top: 1px solid #F0ECE3; padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .kpi-card-header { font-size: 0.82rem; font-weight: 700; color: #4A4644; text-transform: uppercase; line-height: 1.1; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-card-val { font-size: 1.65rem; font-weight: 800; color: #7A1C29; margin: 0.2rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .kpi-card-footer { font-size: 0.75rem; border-top: 1px solid #F0ECE3; padding-top: 0.3rem; margin-top: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem; }
     .badge-up { color: #27AE60; font-weight: 600; }
     .badge-down { color: #C0392B; font-weight: 600; }
     .badge-neutral { color: #7F8C8D; font-weight: 500; }
-    .badge-warning { color: #D35400; font-weight: 700; background: #FDEBD0; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
-    .kpi-resp-tag { font-size: 0.75rem; color: #A07828; font-weight: 600; margin-bottom: 0.3rem; }
+    .badge-warning { color: #D35400; font-weight: 700; background: #FDEBD0; padding: 1px 5px; border-radius: 4px; font-size: 0.68rem; display: inline-block; }
+    .kpi-resp-tag { font-size: 0.73rem; color: #A07828; font-weight: 600; margin-bottom: 0.1rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
 
     /* CONTENEDOR ÚNICO PARA TAREAS */
@@ -168,6 +168,7 @@ def load_data():
             df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
             df_kpi_long = df_kpi_long[df_kpi_long['Medible'].notna() & (df_kpi_long['Medible'] != 'nan')]
             df_kpi_long['Medible'] = df_kpi_long['Medible'].astype(str).str.strip()
+            df_kpi_long['Departamento'] = df_kpi_long['Departamento'].fillna('Sin Depto').astype(str).str.strip()
             
             mask_swap = (df_kpi_long['Medible'] == 'Envio Salados') & (df_kpi_long['Valor'] > 20000)
             if mask_swap.any():
@@ -298,7 +299,6 @@ if st.sidebar.button("🔄 Actualizar Datos Ahora", use_container_width=True):
     st.cache_data.clear()
     st.sidebar.success("¡Datos actualizados!")
 
-# Botón para ir al Drive en línea
 st.sidebar.link_button("🌐 Abrir Sheet en Google Drive", ONLINE_SHEET_URL, use_container_width=True)
 
 try:
@@ -327,8 +327,9 @@ if menu_option == "📊 Dashboards KPIs":
     
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
         semanas_unicas = list(df_kpis['Semana'].unique())
+        deptos_unicos = ["Todos"] + sorted([str(d) for d in df_kpis['Departamento'].dropna().unique() if str(d) != 'nan' and str(d) != 'Sin Depto'])
         
-        col_f1, col_f2 = st.columns([1, 2])
+        col_f1, col_f2, col_f3 = st.columns([1, 1, 1])
         with col_f1:
             selected_week = st.selectbox(
                 "Seleccionar Semana a Inspeccionar:", 
@@ -336,12 +337,19 @@ if menu_option == "📊 Dashboards KPIs":
                 index=len(semanas_unicas) - 1
             )
             
-        responsables = ["Todos"] + sorted([str(r) for r in df_kpis['Responsable'].dropna().unique() if str(r) != 'nan'])
         with col_f2:
-            selected_resp = st.selectbox("Filtrar tarjetas por Responsable:", responsables)
+            selected_dept = st.selectbox("Filtrar por Departamento:", deptos_unicos)
+
+        df_filtered_dept = df_kpis.copy()
+        if selected_dept != "Todos":
+            df_filtered_dept = df_filtered_dept[df_filtered_dept['Departamento'] == selected_dept]
+
+        responsables = ["Todos"] + sorted([str(r) for r in df_filtered_dept['Responsable'].dropna().unique() if str(r) != 'nan'])
+        with col_f3:
+            selected_resp = st.selectbox("Filtrar por Responsable:", responsables)
 
         current_week_idx = semanas_unicas.index(selected_week)
-        df_all_selected = df_kpis.copy()
+        df_all_selected = df_filtered_dept.copy()
         if selected_resp != "Todos":
             df_all_selected = df_all_selected[df_all_selected['Responsable'] == selected_resp]
             
@@ -409,12 +417,12 @@ if menu_option == "📊 Dashboards KPIs":
                 val_formatted = f"{prefix}{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{prefix}{val_curr:,.2f}"
                 
                 card_class = "kpi-card-fallback" if is_fallback else "kpi-card"
-                fallback_tag = f'<div style="margin-bottom:0.3rem;"><span class="badge-warning">⚠️ DATO DE {actual_data_week}</span></div>' if is_fallback else ""
+                fallback_tag = f'<div><span class="badge-warning">⚠️ {actual_data_week}</span></div>' if is_fallback else ""
                 
                 html_code = (
                     f'<div class="{card_class}">'
                     f'<div>'
-                    f'<div class="kpi-card-header">{kpi}</div>'
+                    f'<div class="kpi-card-header" title="{kpi}">{kpi}</div>'
                     f'<div class="kpi-resp-tag">👤 Resp: {resp}</div>'
                     f'{fallback_tag}'
                     f'<div class="kpi-card-val">{val_formatted}</div>'
@@ -428,6 +436,8 @@ if menu_option == "📊 Dashboards KPIs":
                 
                 with cols[idx % 4]:
                     st.markdown(html_code, unsafe_allow_html=True)
+        else:
+            st.info("No se encontraron medibles para los filtros seleccionados.")
 
 # ------------------------------------------
 # MÓDULO 2: COMPARADOR KPI vs KPI
