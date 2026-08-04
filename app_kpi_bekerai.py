@@ -159,15 +159,15 @@ ONLINE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/ed
 
 def parse_custom_number(val):
     if pd.isna(val) or val == "" or str(val).strip() == "":
-        return None
+        return None, False
     val_str = str(val).strip()
     if any(err in val_str for err in ['#¡DIV/0!', '#DIV/0!', '#N/A', '#REF!', '#VALUE!']):
-        return None
+        return None, False
         
     is_percent = '%' in val_str
     cleaned = re.sub(r'[^0-9,\.\-]', '', val_str)
     if not cleaned:
-        return None
+        return None, False
         
     if ',' in cleaned and '.' in cleaned:
         cleaned = cleaned.replace('.', '').replace(',', '.')
@@ -176,9 +176,9 @@ def parse_custom_number(val):
         
     try:
         num = float(cleaned)
-        return (num / 100.0) if is_percent else num
+        return num, is_percent
     except ValueError:
-        return None
+        return None, False
 
 @st.cache_data(ttl=60)
 def load_data():
@@ -207,10 +207,13 @@ def load_data():
                 id_vars=id_cols, 
                 value_vars=val_cols, 
                 var_name='Semana', 
-                value_name='Valor'
+                value_name='Valor_Raw'
             )
             
-            df_kpi_long['Valor'] = df_kpi_long['Valor'].apply(parse_custom_number)
+            parsed_results = df_kpi_long['Valor_Raw'].apply(parse_custom_number)
+            df_kpi_long['Valor'] = [res[0] for res in parsed_results]
+            df_kpi_long['Is_Percent'] = [res[1] for res in parsed_results]
+            
             df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
             
             if 'Categoria' in df_kpi_long.columns:
@@ -229,9 +232,9 @@ def load_data():
                 lambda r: f"{r['Medible']} {r['Categoria_Clean']}".strip() if r['Categoria_Clean'] else r['Medible'], axis=1
             )
         else:
-            df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor'])
+            df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor_Raw', 'Valor', 'Is_Percent'])
     else:
-        df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor'])
+        df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Categoria_Clean', 'Medible_Full', 'Semana', 'Valor_Raw', 'Valor', 'Is_Percent'])
 
     # 2. PARSER PESTAÑA TAREAS
     df_tareas_raw = sheets.get('Tareas', pd.DataFrame())
@@ -423,6 +426,8 @@ if menu_option == "📊 Dashboards KPIs":
                 resp = df_kpi_series['Responsable'].dropna().values[0] if not df_kpi_series.empty else "-"
                 
                 val_curr = 0.0
+                is_percent_val = False
+                raw_val_sheet = ""
                 actual_data_week = selected_week
                 is_fallback = False
                 
@@ -440,6 +445,8 @@ if menu_option == "📊 Dashboards KPIs":
                     if w_data is not None:
                         df_current_rows = w_data
                         val_curr = float(w_data['Valor'].sum())
+                        is_percent_val = bool(w_data['Is_Percent'].any())
+                        raw_val_sheet = str(w_data['Valor_Raw'].iloc[0]) if not w_data['Valor_Raw'].empty else ""
                         actual_data_week = w_name
                         if w_idx < current_week_idx:
                             is_fallback = True
@@ -494,9 +501,13 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     bg_color_class = "kpi-bg-neutral"     # Marfil si no hay datos comparables
 
-                is_money = any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR', 'PRECIO'])
-                prefix = "Bs " if is_money else ""
-                val_formatted = f"{prefix}{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{prefix}{val_curr:,.2f}"
+                # Se toma el tipo de formato detectado directamente desde el Excel/Google Sheet
+                if is_percent_val:
+                    val_formatted = f"{val_curr * 100:.2f}%" if val_curr <= 1 else f"{val_curr:.2f}%"
+                elif "Bs" in str(raw_val_sheet):
+                    val_formatted = f"Bs {val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"Bs {val_curr:,.2f}"
+                else:
+                    val_formatted = f"{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{val_curr:,.2f}"
                 
                 breakdown_html = ""
                 if df_current_rows is not None and not df_current_rows.empty:
@@ -506,7 +517,16 @@ if menu_option == "📊 Dashboards KPIs":
                         for _, row_cat in categories_rows.iterrows():
                             c_name = row_cat['Categoria_Clean']
                             c_val = row_cat['Valor']
-                            c_formatted = f"{prefix}{c_val:,.0f}" if (c_val >= 100 or c_val % 1 == 0) else f"{prefix}{c_val:,.2f}"
+                            c_is_pct = row_cat['Is_Percent']
+                            c_raw = str(row_cat['Valor_Raw'])
+                            
+                            if c_is_pct:
+                                c_formatted = f"{c_val * 100:.2f}%" if c_val <= 1 else f"{c_val:.2f}%"
+                            elif "Bs" in c_raw:
+                                c_formatted = f"Bs {c_val:,.0f}" if (c_val >= 100 or c_val % 1 == 0) else f"Bs {c_val:,.2f}"
+                            else:
+                                c_formatted = f"{c_val:,.0f}" if (c_val >= 100 or c_val % 1 == 0) else f"{c_val:,.2f}"
+                                
                             items_html += f'<div class="kpi-breakdown-row"><span class="kpi-breakdown-cat">{c_name}</span><span class="kpi-breakdown-num">{c_formatted}</span></div>'
                         
                         breakdown_html = f'<div class="kpi-breakdown-box">{items_html}</div>'
