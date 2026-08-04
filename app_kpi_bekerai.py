@@ -1165,47 +1165,40 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     )
 
 # ------------------------------------------
-# MÓDULO NUEVO: ANÁLISIS CLIMA & FESTIVOS
+# MÓDULO: ANÁLISIS CLIMA & FESTIVOS (CORREGIDO)
 # ------------------------------------------
 elif menu_option == "🌤️ Análisis Clima & Festivos":
     st.subheader("🌤️ Relación del Clima, Festividades y Producción por Categorías")
 
-    # 1. TARJETA SUPERIOR: OPINIÓN ANALÍTICA
-    st.markdown(
-        """
-        <div class="analysis-card">
-            <div class="analysis-title">💡 Opinión Analítica e Interpretación Comercial</div>
-            <div class="analysis-author">POR: ANALISTA COMERCIAL & DE VENTAS (GEMINI)</div>
-            
-            <p style="font-size: 0.95rem; line-height: 1.5; color: #333;">
-                Análisis cualitativo y porcentual basado en la relación de Ventas Totales semanales, Clima en Santa Cruz y la Producción por Categorías (Panadería, Pasteles Individuales, Postres Enteros, Salados y Tortas):
-            </p>
-            
-            <div class="analysis-section-hdr">🌡️ Sensibilidad al Clima (Surazos y Días Fríos)</div>
-            <ul class="analysis-list">
-                <li><b>Categoría más impactada (Salados):</b> Ante caídas bruscas de temperatura (11°C - 13°C), la demanda de salados es la que más se dispara, registrando incrementos de producción de hasta <b>+150% a +200%</b> frente a sus semanas promedio.</li>
-                <li><b>Efecto en Tortas y Repostería:</b> Muestran un crecimiento moderado del <b>+80% al +100%</b> durante frentes fríos, asociado al acompañamiento con bebidas calientes y reuniones en espacio cerrado.</li>
-            </ul>
+    # 1. TARJETA SUPERIOR: OPINIÓN ANALÍTICA (SIN IDENTACIÓN INTERNA PARA PREVENIR ERRORES DE MARKDOWN)
+    analysis_card_html = """<div class="analysis-card">
+<div class="analysis-title">💡 Opinión Analítica e Interpretación Comercial</div>
+<div class="analysis-author">POR: ANALISTA COMERCIAL & DE VENTAS (GEMINI)</div>
+<p style="font-size: 0.95rem; line-height: 1.5; color: #333;">
+Análisis cualitativo y porcentual basado en la relación de Ventas Totales semanales, Clima en Santa Cruz y la Producción por Categorías (Panadería, Pasteles Individuales, Postres Enteros, Salados y Tortas):
+</p>
+<div class="analysis-section-hdr">🌡️ Sensibilidad al Clima (Surazos y Días Fríos)</div>
+<ul class="analysis-list">
+<li><b>Categoría más impactada (Salados):</b> Ante caídas bruscas de temperatura (11°C - 13°C), la demanda de salados es la que más se dispara, registrando incrementos de producción de hasta <b>+150% a +200%</b> frente a sus semanas promedio.</li>
+<li><b>Efecto en Tortas y Repostería:</b> Muestran un crecimiento moderado del <b>+80% al +100%</b> durante frentes fríos, asociado al acompañamiento con bebidas calientes y reuniones en espacio cerrado.</li>
+</ul>
+<div class="analysis-section-hdr">🎉 Impacto de Festividades sin "Efecto Regalo"</div>
+<ul class="analysis-list">
+<li><b>Carnaval:</b> Provoca una caída general de volumen de aprox. <b>-10% a -15%</b> en salón y salados por el desplazamiento de la población fuera de la ciudad.</li>
+<li><b>Semana Santa y Feriados Religiosos:</b> Mantienen ventas estables reasignando el mix: la producción de <b>Pasteles Individuales y Salados</b> crece cerca de un <b>+25%</b>, impulsada por consumo rápido y reuniones familiares.</li>
+</ul>
+<div class="analysis-section-hdr">🔍 Análisis de Fondo: Comportamiento Base (Sin Picos Comerciales)</div>
+<p style="font-size: 0.85rem; color: #7F8C8D; margin-bottom: 0.5rem; font-style: italic;">
+Descartando las fechas con fuerte "efecto regalo" (Día de la Madre, Padre y Niño), donde la demanda ocurre independientemente del clima:
+</p>
+<ul class="analysis-list">
+<li><b>Salados es la categoría más vulnerable al clima:</b> 100% reactiva. En semanas calurosas (27°C - 32°C), la producción cae hasta un <b>-30%</b> respecto a su media.</li>
+<li><b>Tortas y Postres Enteros son "Resistentes al Clima":</b> En semanas normales o festivos menores, el volumen de producción varía muy poco (±10%), respondiendo a eventos personales (cumpleaños) más que al clima.</li>
+<li><b>Pasteles Individuales como amortiguador:</b> Categoría constante todo el año. Ante climas extremos amortigua variaciones con cambios mínimos (5% a 8%).</li>
+</ul>
+</div>"""
 
-            <div class="analysis-section-hdr">🎉 Impacto de Festividades sin "Efecto Regalo"</div>
-            <ul class="analysis-list">
-                <li><b>Carnaval:</b> Provoca una caída general de volumen de aprox. <b>-10% a -15%</b> en salón y salados por el desplazamiento de la población fuera de la ciudad.</li>
-                <li><b>Semana Santa y Feriados Religiosos:</b> Mantienen ventas estables reasignando el mix: la producción de <b>Pasteles Individuales y Salados</b> crece cerca de un <b>+25%</b>, impulsada por consumo rápido y reuniones familiares.</li>
-            </ul>
-
-            <div class="analysis-section-hdr">🔍 Análisis de Fondo: Comportamiento Base (Sin Picos Comerciales)</div>
-            <p style="font-size: 0.85rem; color: #7F8C8D; margin-bottom: 0.5rem; font-style: italic;">
-                Descartando las fechas con fuerte "efecto regalo" (Día de la Madre, Padre y Niño), donde la demanda ocurre independientemente del clima:
-            </p>
-            <ul class="analysis-list">
-                <li><b>Salados es la categoría más vulnerable al clima:</b> 100% reactiva. En semanas calurosas (27°C - 32°C), la producción cae hasta un <b>-30%</b> respecto a su media.</li>
-                <li><b>Tortas y Postres Enteros son "Resistentes al Clima":</b> En semanas normales o festivos menores, el volumen de producción varía muy poco (±10%), respondiendo a eventos personales (cumpleaños) más que al clima.</li>
-                <li><b>Pasteles Individuales como amortiguador:</b> Categoría constante todo el año. Ante climas extremos amortigua variaciones con cambios mínimos (5% a 8%).</li>
-            </ul>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(analysis_card_html, unsafe_allow_html=True)
 
     # 2. SECCIÓN INFERIOR EN 2 COLUMNAS
     col_left, col_right = st.columns(2)
@@ -1213,32 +1206,30 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     with col_left:
         # Ponderación de datos climatológicos promedio
         st.markdown(
-            """
-            <div class="sub-card">
-                <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
-                <div class="weather-grid">
-                    <div class="weather-item">
-                        <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
-                        <div class="weather-val">21.8 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
-                        <div class="weather-val">11.0 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
-                        <div class="weather-val">32.9 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
-                        <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
-                    </div>
-                </div>
-                <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
-                    *Valores consolidados del histórico semanal registrador en base de datos.
-                </p>
-            </div>
-            """,
+            """<div class="sub-card">
+<div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
+<div class="weather-grid">
+<div class="weather-item">
+<div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
+<div class="weather-val">21.8 °C</div>
+</div>
+<div class="weather-item">
+<div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
+<div class="weather-val">11.0 °C</div>
+</div>
+<div class="weather-item">
+<div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
+<div class="weather-val">32.9 °C</div>
+</div>
+<div class="weather-item">
+<div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
+<div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
+</div>
+</div>
+<p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
+*Valores consolidados del histórico semanal registrador en base de datos.
+</p>
+</div>""",
             unsafe_allow_html=True,
         )
 
@@ -1270,14 +1261,12 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
         )
 
         st.markdown(
-            f"""
-            <div class="sub-card">
-                <div class="sub-card-title">📅 Calendario de Festividades & Días Especiales</div>
-                <div class="festivos-container">
-                    {festivos_html}
-                </div>
-            </div>
-            """,
+            f"""<div class="sub-card">
+<div class="sub-card-title">📅 Calendario de Festividades & Días Especiales</div>
+<div class="festivos-container">
+{festivos_html}
+</div>
+</div>""",
             unsafe_allow_html=True,
         )
 
