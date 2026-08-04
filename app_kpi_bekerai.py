@@ -142,8 +142,9 @@ FRIDOLIN_CSS = """
     }
     .kpi-breakdown-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 1px; }
     .kpi-breakdown-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .kpi-breakdown-cat { font-weight: 600; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kpi-breakdown-cat { font-weight: 600; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kpi-breakdown-num { font-weight: 700; }
+    .kpi-breakdown-pct { font-weight: 700; font-size: 0.88em; margin-left: 4px; }
 
     .kpi-card-footer { font-size: 0.73rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.3rem; margin-top: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem; }
     .badge-up { color: #27AE60; font-weight: 600; }
@@ -659,7 +660,6 @@ if menu_option == "📊 Dashboards KPIs":
         if len(metrics_list) > 0:
             cols = st.columns(4)
             for idx, kpi in enumerate(metrics_list):
-                # CORRECCIÓN CLAVE: El dataset de la tarjeta se extrae directamente del DF ya filtrado por departamento
                 df_kpi_series = df_filtered_dept[
                     df_filtered_dept["Medible"] == kpi
                 ]
@@ -715,48 +715,47 @@ if menu_option == "📊 Dashboards KPIs":
                         if c != ""
                     ]
 
-                # CÁLCULO DE COMPARACIÓN SOBRE EL MISMO GRUPO/DEPARTAMENTO
+                # OBTENER FILAS DE LA SEMANA ANTERIOR REGISTRADA
+                df_prev_rows = None
+                if actual_week_idx_found > 0:
+                    for w_idx_prev in range(actual_week_idx_found - 1, -1, -1):
+                        p_name = semanas_unicas[w_idx_prev]
+                        p_data = get_week_data(p_name)
+                        if p_data is not None:
+                            prev_w_name = p_name
+                            df_prev_rows = p_data
+                            break
+
+                # CÁLCULO DE COMPARACIÓN GLOBAL Y PROMEDIO LIOPIO DE NULOS
                 if present_cats:
-                    if actual_week_idx_found > 0:
-                        prev_w_name = semanas_unicas[actual_week_idx_found - 1]
-                        rows_prev = df_kpi_series[
-                            (df_kpi_series["Semana"] == prev_w_name)
-                            & (
-                                df_kpi_series["Categoria_Clean"].isin(
-                                    present_cats
-                                )
-                            )
+                    if df_prev_rows is not None:
+                        valid_prev = df_prev_rows[
+                            df_prev_rows["Categoria_Clean"].isin(present_cats)
+                            & df_prev_rows["Valor"].notna()
                         ]
-                        valid_prev = rows_prev[rows_prev["Valor"].notna()]
                         if not valid_prev.empty:
                             val_prev = float(valid_prev["Valor"].sum())
 
                     filtered_series = df_kpi_series[
                         df_kpi_series["Categoria_Clean"].isin(present_cats)
                     ]
-                    weekly_totals = filtered_series.groupby("Semana")[
-                        "Valor"
-                    ].sum()
-                    valid_totals = weekly_totals[weekly_totals > 0]
-                    avg_total = (
-                        valid_totals.mean() if not valid_totals.empty else 0.0
-                    )
+                    # Promedio considerando solo semanas con datos reales (sin nulos)
+                    valid_series = filtered_series.dropna(subset=["Valor"])
+                    if not valid_series.empty:
+                        weekly_totals = valid_series.groupby("Semana")["Valor"].sum()
+                        valid_totals = weekly_totals[weekly_totals > 0]
+                        avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
                 else:
-                    if actual_week_idx_found > 0:
-                        prev_w_name = semanas_unicas[actual_week_idx_found - 1]
-                        prev_data = get_week_data(prev_w_name)
-                        if prev_data is not None:
-                            val_prev = float(prev_data["Valor"].sum())
+                    if df_prev_rows is not None:
+                        val_prev = float(df_prev_rows["Valor"].sum())
 
-                    weekly_totals = df_kpi_series.groupby("Semana")[
-                        "Valor"
-                    ].sum()
-                    valid_totals = weekly_totals[weekly_totals > 0]
-                    avg_total = (
-                        valid_totals.mean() if not valid_totals.empty else 0.0
-                    )
+                    valid_series = df_kpi_series.dropna(subset=["Valor"])
+                    if not valid_series.empty:
+                        weekly_totals = valid_series.groupby("Semana")["Valor"].sum()
+                        valid_totals = weekly_totals[weekly_totals > 0]
+                        avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
 
-                # VARIACIÓN VS SEMANA ANTERIOR
+                # VARIACIÓN GLOBAL VS SEMANA ANTERIOR
                 pct_prev = None
                 if val_prev is not None and val_prev != 0 and val_curr != 0:
                     pct_prev = ((val_curr - val_prev) / val_prev) * 100
@@ -769,7 +768,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
 
-                # VARIACIÓN VS PROMEDIO
+                # VARIACIÓN GLOBAL VS PROMEDIO
                 pct_avg = None
                 if avg_total > 0 and val_curr != 0:
                     pct_avg = ((val_curr - avg_total) / avg_total) * 100
@@ -810,6 +809,7 @@ if menu_option == "📊 Dashboards KPIs":
 
                 val_formatted = format_kpi_value(val_curr, kpi)
 
+                # DESGLOSE POR CATEGORÍA CON SU % INDIVIDUAL vs SEMANA ANTERIOR
                 breakdown_html = ""
                 if df_current_rows is not None and not df_current_rows.empty:
                     categories_rows = df_current_rows[
@@ -821,7 +821,27 @@ if menu_option == "📊 Dashboards KPIs":
                             c_name = row_cat["Categoria_Clean"]
                             c_val = row_cat["Valor"]
                             c_formatted = format_kpi_value(c_val, kpi)
-                            items_html += f'<div class="kpi-breakdown-row"><span class="kpi-breakdown-cat">{c_name}</span><span class="kpi-breakdown-num">{c_formatted}</span></div>'
+                            
+                            # Buscar valor de esta categoría específica en la semana anterior
+                            cat_pct_html = ""
+                            if df_prev_rows is not None and not df_prev_rows.empty:
+                                prev_cat_row = df_prev_rows[
+                                    df_prev_rows["Categoria_Clean"] == c_name
+                                ]
+                                if not prev_cat_row.empty and pd.notna(prev_cat_row["Valor"].values[0]):
+                                    c_prev_val = float(prev_cat_row["Valor"].values[0])
+                                    if c_prev_val > 0 and c_val is not None:
+                                        c_pct = ((c_val - c_prev_val) / c_prev_val) * 100
+                                        symbol = "▲" if c_pct >= 0 else "▼"
+                                        pct_class = "badge-up" if c_pct >= 0 else "badge-down"
+                                        cat_pct_html = f'<span class="kpi-breakdown-pct {pct_class}">{symbol} {c_pct:+.1f}%</span>'
+
+                            items_html += (
+                                f'<div class="kpi-breakdown-row">'
+                                f'<span class="kpi-breakdown-cat">{c_name}</span>'
+                                f'<span><span class="kpi-breakdown-num">{c_formatted}</span> {cat_pct_html}</span>'
+                                f'</div>'
+                            )
 
                         breakdown_html = (
                             f'<div class="kpi-breakdown-box">{items_html}</div>'
