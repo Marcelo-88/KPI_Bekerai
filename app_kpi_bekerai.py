@@ -58,6 +58,24 @@ MEDIBLE_TYPES = {
     "Sucursales Visitadas promedio": "Unidad"
 }
 
+# CONFIGURACIÓN DE COLORIMETRÍA
+KPIS_INVERTIDOS = [
+    "BAJAS % VS VTA", 
+    "TOTAL C X P", 
+    "TOTAL C X P PROVEEDORES MP", 
+    "VALOR ENVIADO TOTAL / VTAS", 
+    "VALOR ENVIADO BODEGA / VTAS", 
+    "VALOR ENVIADO FBCA / VTAS", 
+    "BAJAS", 
+    "BAJAS (PRECIO VTA)"
+]
+
+KPIS_NEUTROS = [
+    "VALOR ENVIADO FBCA", 
+    "VALOR ENVIADO BODEGA", 
+    "COMPRAS PROVEEDORES MP"
+]
+
 FRIDOLIN_CSS = """
 <style>
     .stApp { background-color: #F7F4EE; color: #2D2B2A; }
@@ -79,7 +97,7 @@ FRIDOLIN_CSS = """
         transition: all 0.2s ease;
     }
 
-    /* VARIACIONES DE COLOR (VS SEMANA ANTERIOR) */
+    /* VARIACIONES DE COLOR */
     .kpi-bg-drop {
         background-color: #7A1C29 !important;
         border-color: #58131D !important;
@@ -210,14 +228,12 @@ def parse_custom_number(val):
         return None
 
 def format_kpi_value(val, medible_name):
-    """Aplica formato estricto según el nombre del medible definido en MEDIBLE_TYPES."""
     if val is None or pd.isna(val):
         return "-"
         
     kpi_clean = str(medible_name).strip()
     unit_type = MEDIBLE_TYPES.get(kpi_clean, None)
     
-    # Búsqueda secundaria si no está exacto
     if not unit_type:
         for k, v in MEDIBLE_TYPES.items():
             if k.lower() in kpi_clean.lower():
@@ -353,8 +369,8 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
 
         hover_template = (
             f"<b>{kpi}</b><br>"
-            "🗓️ %{x}<br>"
-            "📊 Valor: <b>%{y:,.2f}</b>"
+            "🗓️ %{{x}}<br>"
+            "📊 Valor: <b>%{{y:,.2f}}</b>"
             "<extra></extra>"
         )
         
@@ -537,18 +553,40 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
-                # REGLA DE COLOR DE FONDO (VS SEMANA ANTERIOR)
-                if pct_prev is not None:
-                    if pct_prev > 0:
-                        bg_color_class = "kpi-bg-up"      # Pistacho (#E1FFC9)
-                    elif pct_prev < 0:
-                        bg_color_class = "kpi-bg-drop"    # Rojo Vino Fridolin (#7A1C29)
+                # ==========================================
+                # LÓGICA DE COLOR DE FONDO PERSONALIZADA
+                # ==========================================
+                kpi_upper = kpi.upper().strip()
+                
+                # 1. SI ES NEUTRO -> SIEMPRE BEIGE NEUTRO
+                if any(kn in kpi_upper for kn in KPIS_NEUTROS):
+                    bg_color_class = "kpi-bg-neutral"
+                
+                # 2. SI ES INVERTIDO -> SUBIR = ROJO, BAJAR = VERDE
+                elif any(ki in kpi_upper for ki in KPIS_INVERTIDOS):
+                    if pct_prev is not None:
+                        if pct_prev > 0:
+                            bg_color_class = "kpi-bg-drop"  # Subió = Malo (Rojo)
+                        elif pct_prev < 0:
+                            bg_color_class = "kpi-bg-up"    # Bajó = Bueno (Verde Pistacho)
+                        else:
+                            bg_color_class = "kpi-bg-neutral"
                     else:
                         bg_color_class = "kpi-bg-neutral"
+                        
+                # 3. ESTÁNDAR -> SUBIR = VERDE, BAJAR = ROJO
                 else:
-                    bg_color_class = "kpi-bg-neutral"
+                    if pct_prev is not None:
+                        if pct_prev > 0:
+                            bg_color_class = "kpi-bg-up"    # Subió = Bueno (Verde Pistacho)
+                        elif pct_prev < 0:
+                            bg_color_class = "kpi-bg-drop"  # Bajó = Malo (Rojo)
+                        else:
+                            bg_color_class = "kpi-bg-neutral"
+                    else:
+                        bg_color_class = "kpi-bg-neutral"
 
-                # FORMATEO DICCIONARIO ESTRICCTO
+                # FORMATEO DICCIONARIO ESTRICTO
                 val_formatted = format_kpi_value(val_curr, kpi)
                 
                 breakdown_html = ""
