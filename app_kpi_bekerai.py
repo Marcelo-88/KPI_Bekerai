@@ -35,17 +35,29 @@ FRIDOLIN_CSS = """
     /* ESTILOS KPIS COMPACTOS */
     .kpi-card {
         background-color: #FFFFFF; border: 1px solid #E6E1D7; border-radius: 12px;
-        padding: 0.6rem 0.8rem; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04); margin-bottom: 0.75rem;
-        min-height: 135px; display: flex; flex-direction: column; justify-content: space-between;
+        padding: 0.7rem 0.85rem; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04); margin-bottom: 0.75rem;
+        min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;
     }
     .kpi-card-fallback {
         background-color: #FFFDF5; border: 2px dashed #E6A23C; border-radius: 12px;
-        padding: 0.6rem 0.8rem; box-shadow: 0 2px 5px rgba(230, 162, 60, 0.12); margin-bottom: 0.75rem;
-        min-height: 135px; display: flex; flex-direction: column; justify-content: space-between;
+        padding: 0.7rem 0.85rem; box-shadow: 0 2px 5px rgba(230, 162, 60, 0.12); margin-bottom: 0.75rem;
+        min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;
     }
-    .kpi-card-header { font-size: 0.82rem; font-weight: 700; color: #4A4644; text-transform: uppercase; line-height: 1.1; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .kpi-card-val { font-size: 1.65rem; font-weight: 800; color: #7A1C29; margin: 0.2rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
-    .kpi-card-footer { font-size: 0.75rem; border-top: 1px solid #F0ECE3; padding-top: 0.3rem; margin-top: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem; }
+    .kpi-card-header { font-size: 0.85rem; font-weight: 700; color: #4A4644; text-transform: uppercase; line-height: 1.1; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-card-val { font-size: 1.55rem; font-weight: 800; color: #7A1C29; margin: 0.1rem 0 0.3rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    
+    /* DESGLOSE DE CATEGORÍAS */
+    .kpi-breakdown-box {
+        background-color: #F8F6F0; border-radius: 6px; padding: 0.35rem 0.5rem;
+        margin: 0.3rem 0 0.4rem 0; font-size: 0.74rem; display: flex; flex-direction: column; gap: 0.15rem;
+        border: 1px solid #EAE6DD;
+    }
+    .kpi-breakdown-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #E2DDD3; padding-bottom: 1px; }
+    .kpi-breakdown-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .kpi-breakdown-cat { font-weight: 600; color: #55514E; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kpi-breakdown-num { font-weight: 700; color: #2D2B2A; }
+
+    .kpi-card-footer { font-size: 0.73rem; border-top: 1px solid #F0ECE3; padding-top: 0.3rem; margin-top: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem; }
     .badge-up { color: #27AE60; font-weight: 600; }
     .badge-down { color: #C0392B; font-weight: 600; }
     .badge-neutral { color: #7F8C8D; font-weight: 500; }
@@ -55,34 +67,20 @@ FRIDOLIN_CSS = """
 
     /* CONTENEDOR ÚNICO PARA TAREAS */
     .task-container-card {
-        background-color: #FFFFFF;
-        border: 1px solid #E2DCD2;
-        border-radius: 16px;
-        padding: 1rem 1.5rem;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-        margin-bottom: 2rem;
+        background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 16px;
+        padding: 1rem 1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 2rem;
     }
-
-    /* FILAS DE TAREAS DENTRO DEL CONTENEDOR ÚNICO */
     .task-row {
-        padding: 1rem 0.5rem;
-        border-bottom: 1px solid #F0ECE3;
-        border-left: 5px solid transparent;
-        border-radius: 4px;
-        margin-bottom: 0.2rem;
+        padding: 1rem 0.5rem; border-bottom: 1px solid #F0ECE3; border-left: 5px solid transparent;
+        border-radius: 4px; margin-bottom: 0.2rem;
     }
-    .task-row:last-child {
-        border-bottom: none;
-    }
+    .task-row:last-child { border-bottom: none; }
     .task-row-pendiente { border-left-color: #E74C3C; }
     .task-row-proceso { border-left-color: #F39C12; }
     .task-row-finalizado { border-left-color: #27AE60; }
     
     .task-title { font-size: 0.98rem; font-weight: 700; color: #2D2B2A; margin-bottom: 0.4rem; padding-left: 0.4rem; }
-    .task-badge {
-        display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.75rem;
-        font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-    }
+    .task-badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     .badge-status-pendiente { background-color: #FDEDEC; color: #C0392B; }
     .badge-status-proceso { background-color: #FEF9E7; color: #D68910; }
     .badge-status-finalizado { background-color: #E8F8F5; color: #1E8449; }
@@ -91,7 +89,6 @@ FRIDOLIN_CSS = """
     .task-meta { font-size: 0.83rem; color: #5D6D7E; margin-top: 0.4rem; padding-left: 0.4rem; display: flex; flex-wrap: wrap; gap: 12px; }
     .task-meta-item { display: flex; align-items: center; gap: 4px; }
     
-    /* TARJETA RESUMEN RESPONSABLE */
     .resp-summary-card {
         background-color: #FFFFFF; border: 1px solid #E5E0D8; border-radius: 12px;
         padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 0.8rem;
@@ -167,7 +164,6 @@ def load_data():
             df_kpi_long['Valor'] = df_kpi_long['Valor'].apply(parse_custom_number)
             df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
             
-            # Normalizar Columna Categoría
             if 'Categoria' in df_kpi_long.columns:
                 df_kpi_long.rename(columns={'Categoria': 'Categoria_Clean'}, inplace=True)
             elif 'Categoría' in df_kpi_long.columns:
@@ -180,7 +176,6 @@ def load_data():
             df_kpi_long['Departamento'] = df_kpi_long['Departamento'].fillna('Sin Depto').astype(str).str.strip()
             df_kpi_long['Categoria_Clean'] = df_kpi_long['Categoria_Clean'].fillna('').astype(str).str.strip()
             
-            # Nombre compuesto para gráficos y filtros cuando existe categoría
             df_kpi_long['Medible_Full'] = df_kpi_long.apply(
                 lambda r: f"{r['Medible']} {r['Categoria_Clean']}".strip() if r['Categoria_Clean'] else r['Medible'], axis=1
             )
@@ -221,7 +216,6 @@ def load_data():
 # 3. HELPER DE GRÁFICAS CON DOBLE EJE Y
 # ==========================================
 def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores"):
-    # Permite buscar tanto por Medible general como por Medible_Full (con categoría)
     existing_kpis = [k for k in kpi_list if k in df_kpis['Medible'].values or k in df_kpis['Medible_Full'].values]
     
     if not existing_kpis:
@@ -237,10 +231,8 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     for idx, kpi in enumerate(existing_kpis):
-        # Filtrar si coincide por Medible_Full o Medible
         sub_df = df_kpis[(df_kpis['Medible_Full'] == kpi) | (df_kpis['Medible'] == kpi)].copy()
         
-        # Si es un medible general que tiene desgloses por categoría, agrupar sumando por semana
         if kpi in sub_df['Medible'].values and sub_df['Categoria_Clean'].nunique() > 1:
             sub_df = sub_df.groupby('Semana', as_index=False)['Valor'].sum()
             
@@ -371,7 +363,6 @@ if menu_option == "📊 Dashboards KPIs":
         if selected_resp != "Todos":
             df_all_selected = df_all_selected[df_all_selected['Responsable'] == selected_resp]
             
-        # Agrupamos por Medible Principal para consolidar categorías en una tarjeta
         metrics_list = df_all_selected['Medible'].unique()
         
         st.markdown(f"##### Datos correspondientes a **{selected_week}**")
@@ -386,20 +377,22 @@ if menu_option == "📊 Dashboards KPIs":
                 actual_data_week = selected_week
                 is_fallback = False
                 
-                # Función auxiliar para consolidar suma de una semana o fila individual
-                def get_week_sum(w_name):
+                # Función auxiliar para obtener datos de una semana dada
+                def get_week_data(w_name):
                     rows_w = df_kpi_series[df_kpi_series['Semana'] == w_name]
                     valid_rows = rows_w[rows_w['Valor'].notna()]
                     if not valid_rows.empty:
-                        return float(valid_rows['Valor'].sum())
+                        return valid_rows
                     return None
 
                 # Búsqueda retroactiva de la última semana disponible
+                df_current_rows = None
                 for w_idx in range(current_week_idx, -1, -1):
                     w_name = semanas_unicas[w_idx]
-                    sum_val = get_week_sum(w_name)
-                    if sum_val is not None:
-                        val_curr = sum_val
+                    w_data = get_week_data(w_name)
+                    if w_data is not None:
+                        df_current_rows = w_data
+                        val_curr = float(w_data['Valor'].sum())
                         actual_data_week = w_name
                         if w_idx < current_week_idx:
                             is_fallback = True
@@ -411,7 +404,9 @@ if menu_option == "📊 Dashboards KPIs":
                 
                 if actual_week_idx_found > 0:
                     prev_w_name = semanas_unicas[actual_week_idx_found - 1]
-                    val_prev = get_week_sum(prev_w_name)
+                    prev_data = get_week_data(prev_w_name)
+                    if prev_data is not None:
+                        val_prev = float(prev_data['Valor'].sum())
                 
                 if val_prev is not None and val_prev != 0 and val_curr != 0:
                     pct_prev = ((val_curr - val_prev) / val_prev) * 100
@@ -424,7 +419,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
                     
-                # Promedio histórico semanal del total consolidado
+                # Promedio histórico semanal
                 weekly_totals = df_kpi_series.groupby('Semana')['Valor'].sum()
                 valid_totals = weekly_totals[weekly_totals > 0]
                 avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
@@ -444,6 +439,20 @@ if menu_option == "📊 Dashboards KPIs":
                 prefix = "Bs " if is_money else ""
                 val_formatted = f"{prefix}{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{prefix}{val_curr:,.2f}"
                 
+                # CREACIÓN DEL DESGLOSE SI POSEE CATEGORÍAS
+                breakdown_html = ""
+                if df_current_rows is not None and not df_current_rows.empty:
+                    categories_rows = df_current_rows[df_current_rows['Categoria_Clean'] != '']
+                    if len(categories_rows) > 0:
+                        items_html = ""
+                        for _, row_cat in categories_rows.iterrows():
+                            c_name = row_cat['Categoria_Clean']
+                            c_val = row_cat['Valor']
+                            c_formatted = f"{prefix}{c_val:,.0f}" if (c_val >= 100 or c_val % 1 == 0) else f"{prefix}{c_val:,.2f}"
+                            items_html += f'<div class="kpi-breakdown-row"><span class="kpi-breakdown-cat">{c_name}</span><span class="kpi-breakdown-num">{c_formatted}</span></div>'
+                        
+                        breakdown_html = f'<div class="kpi-breakdown-box">{items_html}</div>'
+
                 card_class = "kpi-card-fallback" if is_fallback else "kpi-card"
                 fallback_tag = f'<div><span class="badge-warning">⚠️ {actual_data_week}</span></div>' if is_fallback else ""
                 
@@ -454,6 +463,7 @@ if menu_option == "📊 Dashboards KPIs":
                     f'<div class="kpi-resp-tag">👤 Resp: {resp}</div>'
                     f'{fallback_tag}'
                     f'<div class="kpi-card-val">{val_formatted}</div>'
+                    f'{breakdown_html}'
                     f'</div>'
                     f'<div class="kpi-card-footer">'
                     f'<div>{var_prev_html}</div>'
@@ -530,13 +540,12 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     show_full_graph_dialog(df_kpis, selected_custom, "Selección Libre Personalizada", unit_label="Valores")
 
 # ------------------------------------------
-# MÓDULO 3: GESTIÓN DE TAREAS (CONTENEDOR ÚNICO)
+# MÓDULO 3: GESTIÓN DE TAREAS
 # ------------------------------------------
 elif menu_option == "📝 Gestión de Tareas":
     st.subheader("📝 Lista de Tareas Operativas EOS")
     
     if not df_tasks.empty:
-        # --- FILTROS ---
         f_col1, f_col2, f_col3 = st.columns(3)
         
         estados_disponibles = sorted(list(df_tasks['Estado'].dropna().unique()))
@@ -558,7 +567,6 @@ elif menu_option == "📝 Gestión de Tareas":
         with f_col3:
             sel_resps = st.multiselect("👤 Filtrar por Responsable:", all_resps_list, default=[])
 
-        # --- APLICACIÓN DE FILTROS ---
         df_filtered = df_tasks.copy()
         
         if sel_estados:
@@ -574,7 +582,6 @@ elif menu_option == "📝 Gestión de Tareas":
         st.markdown(f"Mostrando **{len(df_filtered)}** de **{len(df_tasks)}** tareas en total.")
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- RENDERIZADO EN TARJETA/CONTENEDOR ÚNICO ---
         if not df_filtered.empty:
             rows_html = ""
             for _, row in df_filtered.iterrows():
@@ -628,7 +635,6 @@ elif menu_option == "📝 Gestión de Tareas":
         else:
             st.info("No hay tareas que coincidan con los filtros seleccionados.")
 
-        # --- SECCIÓN RESUMEN RÁPIDO POR RESPONSABLE (BOTTOM) ---
         st.markdown("---")
         st.markdown("### 📊 Vistazo Rápido: Resumen por Responsable")
         
