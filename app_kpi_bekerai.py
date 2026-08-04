@@ -45,12 +45,12 @@ FRIDOLIN_CSS = """
         border-right: 1px solid #E0D6C8;
     }
     
-    /* TARJETAS ESTILO GROK BUILD (ESTÍLO CLEAN FRIDOLIN) */
+    /* TARJETA NORMAL (ESTÁNDAR BLANCA) */
     .kpi-card {
         background-color: #FFFFFF;
         border: 1px solid #E5E0D8;
         border-radius: 16px;
-        padding: 1.2rem;
+        padding: 1.1rem;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
         margin-bottom: 1rem;
         height: 100%;
@@ -58,13 +58,28 @@ FRIDOLIN_CSS = """
         flex-direction: column;
         justify-content: space-between;
     }
+
+    /* TARJETA CON DATO HISTÓRICO REUTILIZADO (ADVERTENCIA AMARILLA/NARANJA) */
+    .kpi-card-fallback {
+        background-color: #FFFDF2;
+        border: 2px dashed #E6A23C;
+        border-radius: 16px;
+        padding: 1.1rem;
+        box-shadow: 0 4px 6px rgba(230, 162, 60, 0.1);
+        margin-bottom: 1rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
     .kpi-card-header {
         font-size: 0.78rem;
         font-weight: 700;
-        color: #666666;
+        color: #555555;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.3rem;
         height: 2.2rem;
         overflow: hidden;
     }
@@ -72,29 +87,22 @@ FRIDOLIN_CSS = """
         font-size: 1.65rem;
         font-weight: 800;
         color: #801B2B;
-        margin-bottom: 0.6rem;
+        margin-bottom: 0.4rem;
         font-variant-numeric: tabular-nums;
     }
     .kpi-card-footer {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
-        font-size: 0.78rem;
+        gap: 0.2rem;
+        font-size: 0.76rem;
         border-top: 1px solid #F0EAE1;
-        padding-top: 0.6rem;
+        padding-top: 0.5rem;
     }
-    .badge-up {
-        color: #2E7D32;
-        font-weight: 600;
-    }
-    .badge-down {
-        color: #C62828;
-        font-weight: 600;
-    }
-    .badge-neutral {
-        color: #757575;
-        font-weight: 500;
-    }
+    .badge-up { color: #2E7D32; font-weight: 600; }
+    .badge-down { color: #C62828; font-weight: 600; }
+    .badge-neutral { color: #757575; font-weight: 500; }
+    .badge-warning { color: #D97706; font-weight: 700; background: #FEF3C7; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+    
     .kpi-resp-tag {
         font-size: 0.73rem;
         color: #A67C1E;
@@ -216,12 +224,10 @@ if menu_option == "📊 Dashboards KPIs":
     st.subheader("📌 Resumen de Indicadores Semanales")
     
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
-        # Ordenar lista de semanas manteniendo orden cronológico
         semanas_unicas = list(df_kpis['Semana'].unique())
         
         col_f1, col_f2 = st.columns([1, 2])
         with col_f1:
-            # Selecciona por defecto SIEMPRE la ÚLTIMA semana cargada
             selected_week = st.selectbox(
                 "Seleccionar Semana a Inspeccionar:", 
                 semanas_unicas, 
@@ -232,52 +238,67 @@ if menu_option == "📊 Dashboards KPIs":
         with col_f2:
             selected_resp = st.selectbox("Filtrar tarjetas por Responsable:", responsables)
 
-        # Determinar índice de la semana seleccionada y la anterior
         current_week_idx = semanas_unicas.index(selected_week)
-        prev_week = semanas_unicas[current_week_idx - 1] if current_week_idx > 0 else None
         
-        # Dataframe semana actual y anterior
-        df_curr_week = df_kpis[df_kpis['Semana'] == selected_week]
-        df_prev_week = df_kpis[df_kpis['Semana'] == prev_week] if prev_week else pd.DataFrame()
-        
+        # Filtrar responsabilidades
+        df_all_selected = df_kpis.copy()
         if selected_resp != "Todos":
-            df_curr_week = df_curr_week[df_curr_week['Responsable'] == selected_resp]
+            df_all_selected = df_all_selected[df_all_selected['Responsable'] == selected_resp]
             
-        metrics_list = df_curr_week['Medible'].unique()
+        metrics_list = df_all_selected['Medible'].unique()
         
-        st.markdown(f"##### Datos de **{selected_week}**" + (f" *(comparado con {prev_week})*" if prev_week else ""))
+        st.markdown(f"##### Datos de **{selected_week}**")
         
         if len(metrics_list) > 0:
-            # Grilla de 4 tarjetas por fila
             cols = st.columns(4)
             for idx, kpi in enumerate(metrics_list):
-                row_curr = df_curr_week[df_curr_week['Medible'] == kpi]
-                val_curr = float(row_curr['Valor'].values[0]) if not row_curr.empty else 0.0
-                resp = row_curr['Responsable'].values[0] if not row_curr.empty else "-"
+                df_kpi_series = df_kpis[df_kpis['Medible'] == kpi]
+                resp = df_kpi_series['Responsable'].dropna().values[0] if not df_kpi_series.empty else "-"
                 
-                # 1. Variación vs Semana Anterior
+                # --- BUSCADOR DEL ÚLTIMO DATO VÁLIDO (FALLBACK) ---
+                val_curr = 0.0
+                actual_data_week = selected_week
+                is_fallback = False
+                
+                # Recorrer hacia atrás desde la semana seleccionada
+                for w_idx in range(current_week_idx, -1, -1):
+                    w_name = semanas_unicas[w_idx]
+                    row_w = df_kpi_series[df_kpi_series['Semana'] == w_name]
+                    if not row_w.empty:
+                        v = float(row_w['Valor'].values[0])
+                        if v > 0:
+                            val_curr = v
+                            actual_data_week = w_name
+                            if w_idx < current_week_idx:
+                                is_fallback = True
+                            break
+                            
+                # --- BUSCAR VALOR DE LA SEMANA ANTERIOR A LA DEL DATO ENCONTRADO ---
                 val_prev = None
-                if not df_prev_week.empty:
-                    row_prev = df_prev_week[df_prev_week['Medible'] == kpi]
+                actual_week_idx_found = semanas_unicas.index(actual_data_week) if actual_data_week in semanas_unicas else -1
+                if actual_week_idx_found > 0:
+                    prev_w_name = semanas_unicas[actual_week_idx_found - 1]
+                    row_prev = df_kpi_series[df_kpi_series['Semana'] == prev_w_name]
                     if not row_prev.empty:
                         val_prev = float(row_prev['Valor'].values[0])
                 
-                if val_prev is not None and val_prev != 0:
+                # Cálculo % vs Semana Anterior
+                if val_prev is not None and val_prev != 0 and val_curr != 0:
                     pct_prev = ((val_curr - val_prev) / val_prev) * 100
                     if pct_prev > 0:
-                        var_prev_html = f'<span class="badge-up">▲ +{pct_prev:.1f}%</span> vs {prev_week}'
+                        var_prev_html = f'<span class="badge-up">▲ +{pct_prev:.1f}%</span> vs {prev_w_name}'
                     elif pct_prev < 0:
-                        var_prev_html = f'<span class="badge-down">▼ {pct_prev:.1f}%</span> vs {prev_week}'
+                        var_prev_html = f'<span class="badge-down">▼ {pct_prev:.1f}%</span> vs {prev_w_name}'
                     else:
-                        var_prev_html = f'<span class="badge-neutral">= 0.0%</span> vs {prev_week}'
+                        var_prev_html = f'<span class="badge-neutral">= 0.0%</span> vs {prev_w_name}'
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
                     
-                # 2. Variación vs Promedio Historico Total
-                df_kpi_hist = df_kpis[df_kpis['Medible'] == kpi]
-                avg_total = df_kpi_hist['Valor'].mean() if not df_kpi_hist.empty else 0.0
+                # Cálculo % vs Promedio Histórico Total (Solo valores > 0)
+                valid_vals = df_kpi_series[df_kpi_series['Valor'] > 0]['Valor']
+                avg_total = valid_vals.mean() if not valid_vals.empty else 0.0
                 
-                if avg_total > 0:
+                if avg_total > 0 and val_curr != 0:
                     pct_avg = ((val_curr - avg_total) / avg_total) * 100
                     if pct_avg > 0:
                         var_avg_html = f'<span class="badge-up">▲ +{pct_avg:.1f}%</span> vs prom ({avg_total:,.0f})'
@@ -288,19 +309,27 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
-                # Formato numérico en moneda/entero
+                # Formateo del valor
                 if val_curr >= 1000 or val_curr % 1 == 0:
                     val_formatted = f"{val_curr:,.0f}"
                 else:
                     val_formatted = f"{val_curr:,.2f}"
                 
-                # Render Tarjeta Estilo Grok Build con colores Fridolin
+                # --- DEFINIR ESTILO Y ETIQUETA SEGÚN SI ES DATO ACTUAL O FALLBACK ---
+                if is_fallback:
+                    card_class = "kpi-card-fallback"
+                    fallback_tag = f'<div style="margin-bottom:0.3rem;"><span class="badge-warning">⚠️ DATO CORRESPONDE A {actual_data_week}</span></div>'
+                else:
+                    card_class = "kpi-card"
+                    fallback_tag = ""
+                
                 with cols[idx % 4]:
                     st.markdown(f"""
-                    <div class="kpi-card">
+                    <div class="{card_class}">
                         <div>
                             <div class="kpi-card-header">{kpi}</div>
                             <div class="kpi-resp-tag">👤 Resp: {resp}</div>
+                            {fallback_tag}
                             <div class="kpi-card-val">{val_formatted}</div>
                         </div>
                         <div class="kpi-card-footer">
@@ -345,10 +374,8 @@ if menu_option == "📊 Dashboards KPIs":
 # ------------------------------------------
 elif menu_option == "🔀 Comparador KPI vs KPI":
     st.subheader("🔀 Análisis Comparativo Multi-KPI")
-    
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
         metrics_list = sorted([m for m in df_kpis['Medible'].dropna().unique() if str(m) != 'nan'])
-        
         if len(metrics_list) >= 2:
             c1, c2 = st.columns(2)
             with c1:
@@ -360,15 +387,8 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             df_k2 = df_kpis[df_kpis['Medible'] == kpi_2]
             
             fig_comp = go.Figure()
-            fig_comp.add_trace(go.Scatter(
-                x=df_k1['Semana'], y=df_k1['Valor'],
-                name=str(kpi_1), line=dict(color='#801B2B', width=3)
-            ))
-            fig_comp.add_trace(go.Scatter(
-                x=df_k2['Semana'], y=df_k2['Valor'],
-                name=str(kpi_2), line=dict(color='#E2C08A', width=3),
-                yaxis="y2"
-            ))
+            fig_comp.add_trace(go.Scatter(x=df_k1['Semana'], y=df_k1['Valor'], name=str(kpi_1), line=dict(color='#801B2B', width=3)))
+            fig_comp.add_trace(go.Scatter(x=df_k2['Semana'], y=df_k2['Valor'], name=str(kpi_2), line=dict(color='#E2C08A', width=3), yaxis="y2"))
             fig_comp.update_layout(
                 title=dict(text=f"Comparativa: {kpi_1} vs {kpi_2}"),
                 xaxis=dict(title="Semana"),
