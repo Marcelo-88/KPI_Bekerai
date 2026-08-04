@@ -2,13 +2,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import re
 
 # ==========================================
-# 1. CONFIGURACIÓN DE PÁGINA Y TEMA RECETARIO
+# 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS
 # ==========================================
 st.set_page_config(
-    page_title="Fridolin - KPI_Bekerai",
+    page_title="Fridolin - KPI Bekerai 2026",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -23,7 +22,7 @@ FRIDOLIN_CSS = """
         color: #2C2C2C;
     }
     
-    /* Header Principal Rojo Borgoña Recetario */
+    /* Header Principal Rojo Borgoña Recetario (#801B2B) */
     .main-header {
         background-color: #801B2B;
         padding: 1.2rem;
@@ -68,6 +67,8 @@ FRIDOLIN_CSS = """
         font-size: 0.85rem;
         font-weight: 600;
         text-transform: uppercase;
+        height: 2.5rem;
+        overflow: hidden;
     }
     .kpi-value {
         color: #801B2B;
@@ -84,96 +85,50 @@ FRIDOLIN_CSS = """
 st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CONEXIÓN Y CARGA EN VIVO DESDE GOOGLE DRIVE
+# 2. CARGA DE DATOS DESDE GOOGLE DRIVE (XLSX)
 # ==========================================
+GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
+EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
 
-GOOGLE_SHEET_ID = "1xtRenOS7WgWdTcLBWRMUnN_To6irzyKS"
-SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=csv"
-
-@st.cache_data(ttl=60)  # Auto-refresco de datos cada 1 minuto
-def load_data_from_drive():
-    try:
-        df_raw = pd.read_csv(SHEET_URL, header=None)
-    except Exception:
-        df_raw = pd.read_csv(SHEET_URL, header=None, on_bad_lines='skip')
+@st.cache_data(ttl=60)  # Refresco automático cada 60 segundos
+def load_data():
+    # Leer las pestañas del Excel exportado
+    sheets = pd.read_excel(EXCEL_URL, sheet_name=None)
     
-    weeks = [f"Sem {i:02d}" for i in range(1, 31)]
-    kpi_rows = []
-    task_rows = []
+    # --- A. PARSER PESTAÑA KPI ---
+    df_kpi_raw = sheets.get('KPI', pd.DataFrame())
     
-    # Procesamiento robusto de filas
-    for _, row in df_raw.iterrows():
-        # Limpiar celdas vacías
-        row_vals = [str(val).strip() for val in row.values if pd.notna(val) and str(val).strip() not in ['nan', 'None', '']]
-        if not row_vals:
-            continue
-            
-        col0 = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
-        col1 = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ""
+    if not df_kpi_raw.empty:
+        id_cols = ['Quien', 'Departamento', 'Medibles']
+        id_cols_present = [c for c in id_cols if c in df_kpi_raw.columns]
+        val_cols = [c for c in df_kpi_raw.columns if c not in id_cols]
         
-        # --- A. PARSER DE KPIs ---
-        # Detectar filas que contengan nombres de métricas o responsables
-        if len(row) >= 3:
-            combined_text = f"{col0} {col1}".lower()
-            if any(term in combined_text for term in ['venta', 'torta', 'efectivo', 'c x p', 'margen', 'baja', 'costo', 'produccion', 'desperdicio', 'ticket', 'cumplimiento', 'subida']):
-                resp = col0 if (col0 and len(col0) < 25 and not any(char.isdigit() for char in col0)) else "Sin Asignar"
-                metric = col1 if resp != "Sin Asignar" else col0
-                
-                # Ignorar encabezados genéricos
-                if metric.upper() not in ['MEDIBLE', 'KPI', 'INDICADOR', 'TAREA']:
-                    values = []
-                    for val_cell in row.iloc[2:32]:
-                        v_clean = re.sub(r'[^\d.-]', '', str(val_cell))
-                        try:
-                            values.append(float(v_clean) if v_clean != '' else 0.0)
-                        except Exception:
-                            values.append(0.0)
-                    
-                    while len(values) < 30:
-                        values.append(0.0)
-                        
-                    for wk, val in zip(weeks, values):
-                        kpi_rows.append({
-                            'Responsable': resp,
-                            'Medible': metric,
-                            'Semana': wk,
-                            'Valor': val
-                        })
-                        
-        # --- B. PARSER DE TAREAS ---
-        if len(row_vals) >= 2:
-            first_col_upper = row_vals[0].upper()
-            if not any(hdr in first_col_upper for hdr in ['TAREA', 'MEDIBLE', 'SEMANA', 'RESPONSABLE', 'RESP']):
-                # Si parece una descripción de tarea
-                if len(row_vals[0]) > 4 and not any(term in row_vals[0].lower() for term in ['semana', 'total', 'promedio']):
-                    task_name = row_vals[0]
-                    resp_task = row_vals[1] if len(row_vals) > 1 else "Por Asignar"
-                    fecha = row_vals[2] if len(row_vals) > 2 else ""
-                    status = row_vals[3] if len(row_vals) > 3 else "Pendiente"
-                    
-                    status_lower = status.lower()
-                    if 'proceso' in status_lower:
-                        status_clean = 'En Proceso'
-                    elif 'complet' in status_lower or 'listo' in status_lower or 'hecho' in status_lower:
-                        status_clean = 'Completado'
-                    else:
-                        status_clean = 'Pendiente'
-                        
-                    task_rows.append({
-                        'Semana': 'Sem 04',
-                        'Tarea': task_name,
-                        'Responsable': resp_task,
-                        'Fecha Entrega': fecha,
-                        'Estado': status_clean
-                    })
+        # Despivotar semanas
+        df_kpi_long = pd.melt(
+            df_kpi_raw, 
+            id_vars=id_cols_present, 
+            value_vars=val_cols, 
+            var_name='Semana', 
+            value_name='Valor'
+        )
+        df_kpi_long['Valor'] = pd.to_numeric(df_kpi_long['Valor'], errors='coerce').fillna(0)
+        df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
+    else:
+        df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Semana', 'Valor'])
 
-    df_kpis = pd.DataFrame(kpi_rows)
-    df_tasks = pd.DataFrame(task_rows)
-    
-    return df_kpis, df_tasks, df_raw
+    # --- B. PARSER PESTAÑA TAREAS ---
+    df_tareas_raw = sheets.get('Tareas', pd.DataFrame())
+    if not df_tareas_raw.empty:
+        # Reemplazar valores vacíos
+        df_tareas_raw['Estado'] = df_tareas_raw['Estado'].fillna('Pendiente')
+        df_tareas_raw['Responsable Principal'] = df_tareas_raw['Responsable Principal'].fillna('Por Asignar')
+    else:
+        df_tareas_raw = pd.DataFrame()
+
+    return df_kpi_long, df_tareas_raw
 
 # ==========================================
-# 3. BARRA LATERAL (MENÚ PRINCIPAL Y OPCIONES)
+# 3. BARRA LATERAL (MENÚ PRINCIPAL Y FILTROS)
 # ==========================================
 st.sidebar.title("📌 Menú Principal")
 
@@ -190,15 +145,15 @@ menu_option = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚙️ Opciones de Datos")
-if st.sidebar.button("🔄 Actualizar Datos de Drive Ahora", use_container_width=True):
+if st.sidebar.button("🔄 Actualizar Datos Ahora", use_container_width=True):
     st.cache_data.clear()
     st.sidebar.success("¡Datos actualizados desde Google Drive!")
 
 # Carga de datos
 try:
-    df_kpis, df_tasks, df_raw_preview = load_data_from_drive()
+    df_kpis, df_tasks = load_data()
 except Exception as e:
-    st.error(f"⚠️ Error al procesar los datos de Google Drive. Detalles: {e}")
+    st.error(f"⚠️ Error al conectar con Google Sheets. Verifica los permisos de tu archivo. Detalles: {e}")
     st.stop()
 
 # Header Principal Superior
@@ -210,46 +165,60 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. CONTENIDO SEGÚN LA OPCIÓN SELECCIONADA EN LA BARRA LATERAL
+# 4. CONTENIDO SEGÚN EL MÓDULO SELECCIONADO
 # ==========================================
 
 # ------------------------------------------
-# OPCIÓN 1: DASHBOARDS KPIs
+# MODULO 1: DASHBOARDS KPIs
 # ------------------------------------------
 if menu_option == "📊 Dashboards KPIs":
     st.subheader("📌 Resumen de Indicadores Semanales")
     
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
-        col_sel1, col_sel2 = st.columns([1, 3])
+        semanas_disponibles = sorted(df_kpis['Semana'].unique().tolist())
+        col_sel1, col_sel2 = st.columns([1, 2])
         with col_sel1:
-            selected_week = st.selectbox("Seleccionar Semana:", sorted(df_kpis['Semana'].unique()))
+            selected_week = st.selectbox("Seleccionar Semana:", semanas_disponibles, index=0)
             
         df_week = df_kpis[df_kpis['Semana'] == selected_week]
-        available_metrics = df_kpis['Medible'].unique()
         
-        # Seleccionar hasta 4 métricas principales
-        kpis_to_show = list(available_metrics[:4])
-        cols = st.columns(max(len(kpis_to_show), 1))
-        
-        for idx, kpi in enumerate(kpis_to_show):
-            row = df_week[df_week['Medible'] == kpi]
-            val = row['Valor'].values[0] if not row.empty else 0.0
-            resp = row['Responsable'].values[0] if not row.empty else "-"
+        # Filtro opcional por Responsable o Departamento
+        responsables = ["Todos"] + sorted([str(r) for r in df_kpis['Responsable'].dropna().unique()])
+        with col_sel2:
+            selected_resp = st.selectbox("Filtrar tarjetas por Responsable:", responsables)
             
-            with cols[idx]:
-                st.markdown(f"""
-                <div class="kpi-card">
-                    <div class="kpi-title">{kpi}</div>
-                    <div class="kpi-value">{val:,.0f}</div>
-                    <div class="kpi-resp">Resp: {resp}</div>
-                </div>
-                """, unsafe_allow_html=True)
+        if selected_resp != "Todos":
+            df_week_cards = df_week[df_week['Responsable'] == selected_resp]
+        else:
+            df_week_cards = df_week
+            
+        # Mostrar tarjetas de métricas
+        metrics_list = df_week_cards['Medible'].unique()
+        if len(metrics_list) > 0:
+            cols = st.columns(min(4, len(metrics_list)))
+            for idx, kpi in enumerate(metrics_list[:12]):
+                row = df_week_cards[df_week_cards['Medible'] == kpi]
+                val = row['Valor'].values[0] if not row.empty else 0.0
+                resp = row['Responsable'].values[0] if not row.empty else "-"
+                
+                with cols[idx % 4]:
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div class="kpi-title">{kpi}</div>
+                        <div class="kpi-value">{val:,.2f}</div>
+                        <div class="kpi-resp">Resp: {resp}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        else:
+            st.info("No hay métricas para el filtro seleccionado.")
                 
         st.markdown("---")
         st.subheader("📈 Evolución Histórica de KPIs Clave")
         
-        selected_kpi_trend = st.selectbox("Seleccionar KPI para ver evolución:", sorted(available_metrics))
-        df_trend = df_kpis[df_kpis['Medible'] == selected_kpi_trend].sort_values('Semana')
+        all_metrics = sorted(df_kpis['Medible'].dropna().unique())
+        selected_kpi_trend = st.selectbox("Seleccionar KPI para ver su tendencia:", all_metrics)
+        
+        df_trend = df_kpis[df_kpis['Medible'] == selected_kpi_trend]
         
         fig_trend = px.line(
             df_trend, 
@@ -267,30 +236,28 @@ if menu_option == "📊 Dashboards KPIs":
         )
         st.plotly_chart(fig_trend, use_container_width=True)
     else:
-        st.info("ℹ️ No se detectaron métricas procesadas aún. Consulta la pestaña 'Explorador Sheet (Debug)' en la barra lateral para revisar los datos originales.")
+        st.warning("⚠️ No se encontraron datos en la pestaña KPI del documento.")
 
 # ------------------------------------------
-# OPCIÓN 2: COMPARADOR KPI vs KPI
+# MODULO 2: COMPARADOR KPI vs KPI
 # ------------------------------------------
 elif menu_option == "🔀 Comparador KPI vs KPI":
     st.subheader("🔀 Análisis Comparativo Multi-KPI")
-    st.caption("Selecciona 2 métricas para analizar su correlación e impacto en el tiempo.")
+    st.caption("Compara el comportamiento de 2 indicadores a lo largo de las semanas.")
     
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
-        metrics_list = sorted(df_kpis['Medible'].unique())
+        metrics_list = sorted(df_kpis['Medible'].dropna().unique())
         
-        if len(metrics_list) >= 1:
+        if len(metrics_list) >= 2:
             c1, c2 = st.columns(2)
             with c1:
                 kpi_1 = st.selectbox("Seleccionar Primer KPI (Eje Izquierdo):", metrics_list, index=0)
             with c2:
-                default_index_2 = 1 if len(metrics_list) > 1 else 0
-                kpi_2 = st.selectbox("Seleccionar Segundo KPI (Eje Derecho):", metrics_list, index=default_index_2)
+                kpi_2 = st.selectbox("Seleccionar Segundo KPI (Eje Derecho):", metrics_list, index=1)
                 
-            df_k1 = df_kpis[df_kpis['Medible'] == kpi_1].sort_values('Semana')
-            df_k2 = df_kpis[df_kpis['Medible'] == kpi_2].sort_values('Semana')
+            df_k1 = df_kpis[df_kpis['Medible'] == kpi_1]
+            df_k2 = df_kpis[df_kpis['Medible'] == kpi_2]
             
-            # Construcción segura del gráfico de dos ejes
             fig_comp = go.Figure()
             
             fig_comp.add_trace(go.Scatter(
@@ -328,12 +295,12 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             
             st.plotly_chart(fig_comp, use_container_width=True)
         else:
-            st.info("ℹ️ Necesitas al menos una métrica para comparar.")
+            st.info("Necesitas al menos 2 métricas en tu tabla para comparar.")
     else:
-        st.info("ℹ️ No hay suficiente data procesada para la comparación.")
+        st.info("No hay datos de KPIs disponibles.")
 
 # ------------------------------------------
-# OPCIÓN 3: GESTIÓN DE TAREAS
+# MODULO 3: GESTIÓN DE TAREAS
 # ------------------------------------------
 elif menu_option == "📝 Gestión de Tareas":
     st.subheader("📝 Lista de Tareas y Operaciones EOS")
@@ -341,15 +308,15 @@ elif menu_option == "📝 Gestión de Tareas":
     if not df_tasks.empty:
         t_col1, t_col2 = st.columns(2)
         with t_col1:
-            sem_task_filter = st.selectbox("Filtrar por Semana (Tareas):", ["Todas"] + sorted(list(df_tasks['Semana'].unique())))
+            depto_filter = st.selectbox("Filtrar por Departamento:", ["Todos"] + sorted(list(df_tasks['Departamento'].dropna().unique())))
         with t_col2:
-            resp_task_filter = st.selectbox("Filtrar por Responsable:", ["Todos"] + sorted(list(df_tasks['Responsable'].unique())))
+            resp_filter = st.selectbox("Filtrar por Responsable Principal:", ["Todos"] + sorted(list(df_tasks['Responsable Principal'].dropna().unique())))
             
         df_filtered_tasks = df_tasks.copy()
-        if sem_task_filter != "Todas":
-            df_filtered_tasks = df_filtered_tasks[df_filtered_tasks['Semana'] == sem_task_filter]
-        if resp_task_filter != "Todos":
-            df_filtered_tasks = df_filtered_tasks[df_filtered_tasks['Responsable'] == resp_task_filter]
+        if depto_filter != "Todos":
+            df_filtered_tasks = df_filtered_tasks[df_filtered_tasks['Departamento'] == depto_filter]
+        if resp_filter != "Todos":
+            df_filtered_tasks = df_filtered_tasks[df_filtered_tasks['Responsable Principal'] == resp_filter]
             
         st.dataframe(
             df_filtered_tasks,
@@ -357,29 +324,30 @@ elif menu_option == "📝 Gestión de Tareas":
             hide_index=True
         )
     else:
-        st.info("ℹ️ No se detectaron tareas formateadas en la hoja actual.")
+        st.info("No se encontraron registros en la pestaña 'Tareas'.")
 
 # ------------------------------------------
-# OPCIÓN 4: SCORECARD & CUMPLIMIENTO
+# MODULO 4: SCORECARD & CUMPLIMIENTO
 # ------------------------------------------
 elif menu_option == "🏆 Scorecard & Cumplimiento":
-    st.subheader("🏆 Nivel de Cumplimiento por Integrante")
+    st.subheader("🏆 Cumplimiento de Tareas por Responsable")
     
-    if not df_tasks.empty:
-        task_summary = df_tasks.groupby(['Responsable', 'Estado']).size().unstack(fill_value=0)
+    if not df_tasks.empty and 'Estado' in df_tasks.columns:
+        task_summary = df_tasks.groupby(['Responsable Principal', 'Estado']).size().unstack(fill_value=0)
         
-        for col_name in ['Completado', 'En Proceso', 'Pendiente']:
+        for col_name in ['Finalizado', 'Completado', 'En Proceso', 'Pendiente']:
             if col_name not in task_summary.columns:
                 task_summary[col_name] = 0
             
-        task_summary['Total Tareas'] = task_summary.sum(axis=1)
-        task_summary['% Cumplimiento'] = (task_summary['Completado'] / task_summary['Total Tareas'] * 100).round(1)
+        task_summary['Completadas'] = task_summary.get('Finalizado', 0) + task_summary.get('Completado', 0)
+        task_summary['Total Tareas'] = task_summary.sum(axis=1) - task_summary['Completadas']
+        task_summary['% Cumplimiento'] = (task_summary['Completadas'] / task_summary['Total Tareas'] * 100).round(1).fillna(0)
         
         task_summary = task_summary.reset_index().sort_values('% Cumplimiento', ascending=False)
         
         fig_score = px.bar(
             task_summary,
-            x='Responsable',
+            x='Responsable Principal',
             y='% Cumplimiento',
             text='% Cumplimiento',
             color='% Cumplimiento',
@@ -393,16 +361,18 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
         )
         
         st.plotly_chart(fig_score, use_container_width=True)
-        
-        st.subheader("📋 Resumen Detallado por Persona")
+        st.subheader("📋 Resumen Detallado")
         st.dataframe(task_summary, use_container_width=True, hide_index=True)
     else:
-        st.info("ℹ️ No hay tareas registradas para calcular el nivel de cumplimiento.")
+        st.info("No hay suficientes datos en la pestaña Tareas para generar el Scorecard.")
 
 # ------------------------------------------
-# OPCIÓN 5: EXPLORADOR SHEET (DEBUG)
+# MODULO 5: EXPLORADOR SHEET (DEBUG)
 # ------------------------------------------
 elif menu_option == "🔍 Explorador Sheet (Debug)":
-    st.subheader("🔍 Previsualización Directa del Google Sheet")
-    st.caption("A continuación se muestra exactamente la tabla que la app recibe desde Google Drive:")
-    st.dataframe(df_raw_preview, use_container_width=True)
+    st.subheader("🔍 Previsualización Directa de Datos Procesados")
+    st.write("**Pestaña KPI (Transformada para el Tablero):**")
+    st.dataframe(df_kpis, use_container_width=True)
+    
+    st.write("**Pestaña Tareas (Raw):**")
+    st.dataframe(df_tasks, use_container_width=True)
