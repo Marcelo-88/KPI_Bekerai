@@ -109,9 +109,8 @@ FRIDOLIN_CSS = """
         margin-bottom: 0.3rem;
     }
 
-    /* ESTILO PARA TARJETAS DE COMPARACIÓN COMPACTAS */
     .compare-card-title {
-        font-size: 1rem;
+        font-size: 1.05rem;
         font-weight: 700;
         color: #801B2B;
         margin-bottom: 0.5rem;
@@ -160,6 +159,7 @@ def load_data():
             df_kpi_long['Valor'] = pd.to_numeric(df_kpi_long['Valor'], errors='coerce').fillna(0)
             df_kpi_long.rename(columns={'Quien': 'Responsable', 'Medibles': 'Medible'}, inplace=True)
             df_kpi_long = df_kpi_long[df_kpi_long['Medible'].notna() & (df_kpi_long['Medible'] != 'nan')]
+            df_kpi_long['Medible'] = df_kpi_long['Medible'].astype(str).str.strip()
         else:
             df_kpi_long = pd.DataFrame(columns=['Responsable', 'Departamento', 'Medible', 'Semana', 'Valor'])
     else:
@@ -189,24 +189,32 @@ def load_data():
     return df_kpi_long, df_tasks
 
 # ==========================================
-# 3. HELPER PARA GRAFICAR MULTI-KPI CON DOBLE EJE
+# 3. HELPER MEJORADO PARA DIBUJAR GRÁFICAS
 # ==========================================
-def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=500):
+def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420):
     fig = go.Figure()
     colors = ['#801B2B', '#E6A23C', '#2E7D32', '#1E88E5', '#8E24AA', '#D81B60', '#00ACC1', '#F4511E', '#3949AB', '#43A047']
     
+    # Filtrar solo KPIs existentes
+    existing_kpis = [k for k in kpi_list if k in df_kpis['Medible'].values]
+    
+    if not existing_kpis:
+        fig.add_annotation(text="No hay coincidencia exacta de datos para los KPIs seleccionados",
+                           xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False,
+                           font=dict(size=14, color="#801B2B"))
+        fig.update_layout(height=height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF')
+        return fig
+        
     max_vals = {}
-    for kpi in kpi_list:
+    for kpi in existing_kpis:
         sub_df = df_kpis[df_kpis['Medible'] == kpi]
         if not sub_df.empty:
             max_vals[kpi] = sub_df['Valor'].max()
-            
-    if not max_vals:
-        return fig
-        
-    overall_max = max(max_vals.values()) if max_vals.values() else 1
+
+    overall_max = max(max_vals.values()) if max_vals else 1
+    min_max = min(max_vals.values()) if max_vals else 1
     
-    for idx, kpi in enumerate(kpi_list):
+    for idx, kpi in enumerate(existing_kpis):
         sub_df = df_kpis[df_kpis['Medible'] == kpi]
         if sub_df.empty:
             continue
@@ -214,36 +222,48 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         color = colors[idx % len(colors)]
         max_v = max_vals.get(kpi, 0)
         
-        use_secondary_axis = (overall_max > 100000 and max_v > 100000 and max_v > min(max_vals.values()) * 10)
+        # Activar 2do eje si un KPI es 10 veces más grande que el más pequeño
+        use_secondary_axis = (overall_max > 1000 and max_v > min_max * 10)
         
         fig.add_trace(go.Scatter(
             x=sub_df['Semana'],
             y=sub_df['Valor'],
             name=str(kpi),
             mode='lines+markers',
-            line=dict(color=color, width=3),
+            line=dict(color=color, width=2.5),
             marker=dict(size=6),
             yaxis="y2" if use_secondary_axis else "y"
         ))
         
     fig.update_layout(
-        title=dict(text=title, font=dict(size=15, color="#801B2B")),
-        xaxis=dict(title="Semana"),
-        yaxis=dict(title="Valores Estándar", showgrid=True),
-        yaxis2=dict(title="Escala Grande (Secundaria)", overlaying="y", side="right", showgrid=False),
+        title=dict(text=title, font=dict(size=14, color="#801B2B")),
+        xaxis=dict(title=None, tickangle=-45),
+        yaxis=dict(title="Valores", showgrid=True, gridcolor="#F0EAE1"),
+        yaxis2=dict(title="Escala Secundaria", overlaying="y", side="right", showgrid=False),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='#FFFFFF',
         height=height,
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
+            y=1.05,
+            xanchor="left",
+            x=0,
+            font=dict(size=10)
         ),
-        margin=dict(l=20, r=20, t=60, b=20)
+        margin=dict(l=40, r=40, t=60, b=40)
     )
     return fig
+
+# MODAL PARA PANTALLA COMPLETA
+if hasattr(st, "dialog"):
+    @st.dialog("🔍 Vista Ampliada del Gráfico", width="large")
+    def show_full_graph_dialog(df, kpi_list, title):
+        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=600)
+        st.plotly_chart(fig, use_container_width=True, key=f"dialog_{title}")
+else:
+    def show_full_graph_dialog(df, kpi_list, title):
+        pass
 
 # ==========================================
 # 4. BARRA LATERAL (MENÚ PRINCIPAL Y FILTROS)
@@ -433,87 +453,85 @@ if menu_option == "📊 Dashboards KPIs":
             st.plotly_chart(fig_trend, use_container_width=True, key="chart_trend")
 
 # ------------------------------------------
-# MODULO 2: COMPARADOR KPI vs KPI (TARJETAS + MODAL AMPLIADO)
+# MODULO 2: COMPARADOR KPI vs KPI (OPTIMIZADO)
 # ------------------------------------------
 elif menu_option == "🔀 Comparador KPI vs KPI":
-    st.subheader("🔀 Análisis Comparativo Multi-KPI (Tarjetas Interactivas)")
-    st.caption("💡 *Tip: Haz clic en los nombres dentro de la leyenda del gráfico para ocultar/mostrar cualquier métrica. Abre el desplegable para ampliar.*")
+    st.subheader("🔀 Análisis Comparativo Multi-KPI")
+    st.caption("💡 *Tip: Puedes hacer clic en la leyenda del gráfico para apagar/encender indicadores.*")
 
     if not df_kpis.empty and 'Medible' in df_kpis.columns:
+        all_kpis_in_db = list(df_kpis['Medible'].unique())
         
-        # 1. GRUPOS DE GRÁFICAS PREDEFINIDAS
-        kpi_g1 = ["VENTAS", "PAGO PROVEEDORES MP", "TOTAL C X P PROVEEDORES MP", "BALANCE EFECTIVO"]
-        
-        kpi_g2 = [
-            "PROD. TORTAS", "PROD. SALADO", "PROD. PANADERIA", "PROD. PASTELES INDIVIDUALES", "PROD. POSTRES ENTEROS",
-            "ENVIO TORTAS", "ENVIO SALADO", "ENVIO PANADERIA", "ENVIO PASTELES INDIVIDUALES", "ENVIO POSTRES ENTEROS",
-            "VENTAS TORTAS", "VENTAS SALADO", "VENTAS PANADERIA", "VENTAS PASTELES INDIVIDUALES", "VENTAS POSTRES ENTEROS",
-            "BAJAS TORTAS", "BAJAS SALADO", "BAJAS PANADERIA", "BAJAS PASTELES INDIVIDUALES", "BAJAS POSTRES ENTEROS"
-        ]
-        
-        kpi_g3 = [
-            "INVERSION RRSS", 
-            "ALCANCE IG&FB + REPRD. VISTAS TIKTOK", 
-            "PAGO PROVEEDORES MARKETING", 
-            "VENTAS"
-        ]
+        # BÚSQUEDA INTELIGENTE DE NOMBRES DE KPIS (para evitar descalces)
+        def find_kpis_matching(keywords):
+            matched = []
+            for k in all_kpis_in_db:
+                for kw in keywords:
+                    if kw.lower() in k.lower():
+                        matched.append(k)
+                        break
+            return matched
 
-        # GRID 2x2 DE TARJETAS
+        kpi_g1 = find_kpis_matching(["VENTAS", "PAGO PROVEEDORES MP", "C X P", "BALANCE EFECTIVO"])
+        if not kpi_g1:
+            kpi_g1 = all_kpis_in_db[:4]
+            
+        kpi_g2 = find_kpis_matching(["PROD.", "ENVIO", "BAJAS"])
+        if not kpi_g2:
+            kpi_g2 = [k for k in all_kpis_in_db if any(x in k.lower() for x in ["prod", "baja", "envio"])][:6]
+            
+        kpi_g3 = find_kpis_matching(["INVERSION", "ALCANCE", "MARKETING", "VENTAS"])
+        if not kpi_g3:
+            kpi_g3 = all_kpis_in_db[:3]
+
+        # LAYOUT DE 2 COLUMNAS LADO A LADO
         c1, c2 = st.columns(2)
         
-        # --- TARJETA 1: FINANZAS & FLUSO ---
+        # --- TARJETA 1 ---
         with c1:
             st.markdown('<div class="compare-card-title">💵 1. Ventas vs Pagos vs CxP vs Efectivo</div>', unsafe_allow_html=True)
-            fig1 = render_multi_kpi_chart(df_kpis, kpi_g1, title="Ventas vs Pagos vs CxP vs Efectivo", height=280)
-            st.plotly_chart(fig1, use_container_width=True, key="card_1_small")
-            
-            with st.expander("🔍 **Ampliar Gráfica 1 (Pantalla Completa)**"):
-                fig1_l = render_multi_kpi_chart(df_kpis, kpi_g1, title="1. Ventas vs Pagos vs CxP vs Balance Efectivo", height=600)
-                st.plotly_chart(fig1_l, use_container_width=True, key="card_1_large")
+            fig1 = render_multi_kpi_chart(df_kpis, kpi_g1, title="Finanzas & Flujo", height=380)
+            st.plotly_chart(fig1, use_container_width=True, key="card_1_main")
+            if st.button("🔍 Maximizar Gráfico 1", key="btn_max_1", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g1, "1. Ventas vs Pagos vs CxP vs Balance Efectivo")
 
-        # --- TARJETA 3: MARKETING & VENTAS ---
+        # --- TARJETA 2 ---
         with c2:
-            st.markdown('<div class="compare-card-title">📣 3. Marketing vs Alcance vs Ventas</div>', unsafe_allow_html=True)
-            fig3 = render_multi_kpi_chart(df_kpis, kpi_g3, title="Inversión RRSS vs Alcance vs Ventas", height=280)
-            st.plotly_chart(fig3, use_container_width=True, key="card_3_small")
-            
-            with st.expander("🔍 **Ampliar Gráfica 3 (Pantalla Completa)**"):
-                fig3_l = render_multi_kpi_chart(df_kpis, kpi_g3, title="3. Inversión RRSS vs Alcance TikTok/Meta vs Gasto Mktg vs Ventas", height=600)
-                st.plotly_chart(fig3_l, use_container_width=True, key="card_3_large")
+            st.markdown('<div class="compare-card-title">🍰 2. Producción vs Envíos vs Bajas</div>', unsafe_allow_html=True)
+            fig2 = render_multi_kpi_chart(df_kpis, kpi_g2, title="Flujo de Productos", height=380)
+            st.plotly_chart(fig2, use_container_width=True, key="card_2_main")
+            if st.button("🔍 Maximizar Gráfico 2", key="btn_max_2", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g2, "2. Producción vs Envíos vs Bajas")
 
         st.markdown("---")
         c3, c4 = st.columns(2)
 
-        # --- TARJETA 2: PRODUCCIÓN vs ENVÍO vs VENTA vs BAJAS ---
+        # --- TARJETA 3 ---
         with c3:
-            st.markdown('<div class="compare-card-title">🍰 2. Producción vs Envíos vs Ventas vs Bajas</div>', unsafe_allow_html=True)
-            fig2 = render_multi_kpi_chart(df_kpis, kpi_g2, title="Flujo Completo de Productos", height=280)
-            st.plotly_chart(fig2, use_container_width=True, key="card_2_small")
-            
-            with st.expander("🔍 **Ampliar Gráfica 2 (Pantalla Completa)**"):
-                fig2_l = render_multi_kpi_chart(df_kpis, kpi_g2, title="2. Producción vs Envíos vs Ventas vs Bajas (Todas las líneas)", height=650)
-                st.plotly_chart(fig2_l, use_container_width=True, key="card_2_large")
+            st.markdown('<div class="compare-card-title">📣 3. Marketing vs Alcance vs Ventas</div>', unsafe_allow_html=True)
+            fig3 = render_multi_kpi_chart(df_kpis, kpi_g3, title="Marketing & Retorno", height=380)
+            st.plotly_chart(fig3, use_container_width=True, key="card_3_main")
+            if st.button("🔍 Maximizar Gráfico 3", key="btn_max_3", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g3, "3. Marketing vs Alcance vs Ventas")
 
-        # --- TARJETA 4: COMPARADOR PERSONALIZADO ---
+        # --- TARJETA 4 ---
         with c4:
             st.markdown('<div class="compare-card-title">🛠️ 4. Comparador Personalizado</div>', unsafe_allow_html=True)
-            all_metrics_available = sorted([m for m in df_kpis['Medible'].dropna().unique() if str(m) != 'nan'])
             
             selected_custom = st.multiselect(
-                "Selecciona las métricas a comparar:",
-                all_metrics_available,
-                default=all_metrics_available[:2] if len(all_metrics_available) >= 2 else all_metrics_available
+                "Selecciona métricas:",
+                all_kpis_in_db,
+                default=all_kpis_in_db[:2] if len(all_kpis_in_db) >= 2 else all_kpis_in_db,
+                key="multi_custom_sel"
             )
             
             if selected_custom:
-                fig4 = render_multi_kpi_chart(df_kpis, selected_custom, title="Comparativa Personalizada", height=280)
-                st.plotly_chart(fig4, use_container_width=True, key="card_4_small")
-                
-                with st.expander("🔍 **Ampliar Gráfica Personalizada (Pantalla Completa)**"):
-                    fig4_l = render_multi_kpi_chart(df_kpis, selected_custom, title="Comparativa Personalizada Selección Libre", height=600)
-                    st.plotly_chart(fig4_l, use_container_width=True, key="card_4_large")
+                fig4 = render_multi_kpi_chart(df_kpis, selected_custom, title="Selección Libre", height=350)
+                st.plotly_chart(fig4, use_container_width=True, key="card_4_main")
+                if st.button("🔍 Maximizar Gráfico Personalizado", key="btn_max_4", use_container_width=True):
+                    show_full_graph_dialog(df_kpis, selected_custom, "Comparativa Personalizada")
             else:
-                st.info("Por favor selecciona al menos una métrica para mostrar la gráfica.")
+                st.info("Selecciona al menos un KPI para graficar.")
 
 # ------------------------------------------
 # MODULO 3: GESTIÓN DE TAREAS
