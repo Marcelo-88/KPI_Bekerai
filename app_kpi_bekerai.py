@@ -32,17 +32,69 @@ FRIDOLIN_CSS = """
     .main-header p { color: #E6C894 !important; margin-top: 5px; margin-bottom: 0; font-size: 0.95rem; }
     section[data-testid="stSidebar"] { background-color: #EFECE4 !important; border-right: 1px solid #DFD9CE; }
     
-    /* ESTILOS KPIS COMPACTOS */
-    .kpi-card {
-        background-color: #FFFFFF; border: 1px solid #E6E1D7; border-radius: 12px;
+    /* ESTILOS KPIS COMPACTOS BASE */
+    .kpi-card-base {
+        border-radius: 12px;
         padding: 0.7rem 0.85rem; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04); margin-bottom: 0.75rem;
         min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;
+        border: 1px solid #E6E1D7;
+        transition: all 0.2s ease;
     }
-    .kpi-card-fallback {
-        background-color: #FFFDF5; border: 2px dashed #E6A23C; border-radius: 12px;
-        padding: 0.7rem 0.85rem; box-shadow: 0 2px 5px rgba(230, 162, 60, 0.12); margin-bottom: 0.75rem;
-        min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;
+
+    /* VARIACIONES DE COLOR SEGÚN DESEMPEÑO */
+    /* 1. Caída vs Promedio -> Rojo Vino Fridolin */
+    .kpi-bg-drop-avg {
+        background-color: #7A1C29 !important;
+        border-color: #58131D !important;
+        color: #FFFFFF !important;
     }
+    .kpi-bg-drop-avg .kpi-card-header { color: #FADBD8 !important; }
+    .kpi-bg-drop-avg .kpi-card-val { color: #FFFFFF !important; }
+    .kpi-bg-drop-avg .kpi-resp-tag { color: #F5CBA7 !important; }
+    .kpi-bg-drop-avg .badge-up { color: #2ECC71 !important; font-weight: 700; }
+    .kpi-bg-drop-avg .badge-down { color: #F1948A !important; font-weight: 700; }
+    .kpi-bg-drop-avg .badge-neutral { color: #EAEDED !important; }
+    .kpi-bg-drop-avg .kpi-breakdown-box { background-color: rgba(255, 255, 255, 0.15) !important; border-color: rgba(255, 255, 255, 0.25) !important; }
+    .kpi-bg-drop-avg .kpi-breakdown-cat { color: #FADBD8 !important; }
+    .kpi-bg-drop-avg .kpi-breakdown-num { color: #FFFFFF !important; }
+    .kpi-bg-drop-avg .kpi-card-footer { border-top-color: rgba(255, 255, 255, 0.2) !important; }
+
+    /* 2. Caída vs Semana Anterior -> Marfil Oscuro */
+    .kpi-bg-drop-prev {
+        background-color: #EDE7D9 !important;
+        border-color: #D3CBBE !important;
+        color: #2D2B2A !important;
+    }
+
+    /* 3. Subida vs Promedio -> Verde Pastel Oscuro */
+    .kpi-bg-up-avg {
+        background-color: #A3E4D7 !important;
+        border-color: #76D7C4 !important;
+        color: #0E6251 !important;
+    }
+    .kpi-bg-up-avg .kpi-card-header { color: #0B5345 !important; }
+    .kpi-bg-up-avg .kpi-card-val { color: #0B5345 !important; }
+    .kpi-bg-up-avg .kpi-breakdown-box { background-color: rgba(255, 255, 255, 0.5) !important; border-color: #76D7C4 !important; }
+
+    /* 4. Subida vs Semana Anterior -> Verde Pastel Claro */
+    .kpi-bg-up-prev {
+        background-color: #E8F8F5 !important;
+        border-color: #A3E4D7 !important;
+        color: #117A65 !important;
+    }
+
+    /* 5. Fondo Estándar Blanco */
+    .kpi-bg-neutral {
+        background-color: #FFFFFF !important;
+        border-color: #E6E1D7 !important;
+    }
+
+    /* BORDE DE FALLBACK PARA SEMANAS HISTÓRICAS */
+    .kpi-border-fallback {
+        border: 2px dashed #E6A23C !important;
+        box-shadow: 0 2px 6px rgba(230, 162, 60, 0.18) !important;
+    }
+
     .kpi-card-header { font-size: 0.85rem; font-weight: 700; color: #4A4644; text-transform: uppercase; line-height: 1.1; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .kpi-card-val { font-size: 1.55rem; font-weight: 800; color: #7A1C29; margin: 0.1rem 0 0.3rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
     
@@ -52,12 +104,12 @@ FRIDOLIN_CSS = """
         margin: 0.3rem 0 0.4rem 0; font-size: 0.74rem; display: flex; flex-direction: column; gap: 0.15rem;
         border: 1px solid #EAE6DD;
     }
-    .kpi-breakdown-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #E2DDD3; padding-bottom: 1px; }
+    .kpi-breakdown-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 1px; }
     .kpi-breakdown-row:last-child { border-bottom: none; padding-bottom: 0; }
     .kpi-breakdown-cat { font-weight: 600; color: #55514E; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kpi-breakdown-num { font-weight: 700; color: #2D2B2A; }
 
-    .kpi-card-footer { font-size: 0.73rem; border-top: 1px solid #F0ECE3; padding-top: 0.3rem; margin-top: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem; }
+    .kpi-card-footer { font-size: 0.73rem; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 0.3rem; margin-top: 0.3rem; display: flex; flex-direction: column; gap: 0.1rem; }
     .badge-up { color: #27AE60; font-weight: 600; }
     .badge-down { color: #C0392B; font-weight: 600; }
     .badge-neutral { color: #7F8C8D; font-weight: 500; }
@@ -377,7 +429,6 @@ if menu_option == "📊 Dashboards KPIs":
                 actual_data_week = selected_week
                 is_fallback = False
                 
-                # Función auxiliar para obtener datos de una semana dada
                 def get_week_data(w_name):
                     rows_w = df_kpi_series[df_kpi_series['Semana'] == w_name]
                     valid_rows = rows_w[rows_w['Valor'].notna()]
@@ -385,7 +436,6 @@ if menu_option == "📊 Dashboards KPIs":
                         return valid_rows
                     return None
 
-                # Búsqueda retroactiva de la última semana disponible
                 df_current_rows = None
                 for w_idx in range(current_week_idx, -1, -1):
                     w_name = semanas_unicas[w_idx]
@@ -408,6 +458,7 @@ if menu_option == "📊 Dashboards KPIs":
                     if prev_data is not None:
                         val_prev = float(prev_data['Valor'].sum())
                 
+                pct_prev = None
                 if val_prev is not None and val_prev != 0 and val_curr != 0:
                     pct_prev = ((val_curr - val_prev) / val_prev) * 100
                     if pct_prev > 0:
@@ -419,11 +470,11 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
                     
-                # Promedio histórico semanal
                 weekly_totals = df_kpi_series.groupby('Semana')['Valor'].sum()
                 valid_totals = weekly_totals[weekly_totals > 0]
                 avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
                 
+                pct_avg = None
                 if avg_total > 0 and val_curr != 0:
                     pct_avg = ((val_curr - avg_total) / avg_total) * 100
                     if pct_avg > 0:
@@ -435,11 +486,21 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
                 
+                # DETERMINACIÓN DEL COLOR DINÁMICO DE FONDO
+                bg_color_class = "kpi-bg-neutral"
+                if pct_avg is not None and pct_avg < 0:
+                    bg_color_class = "kpi-bg-drop-avg"      # Rojo Vino Fridolin (Bajó vs Promedio)
+                elif pct_prev is not None and pct_prev < 0:
+                    bg_color_class = "kpi-bg-drop-prev"     # Marfil Oscuro (Bajó vs Semana Anterior)
+                elif pct_avg is not None and pct_avg > 0:
+                    bg_color_class = "kpi-bg-up-avg"        # Verde Pastel Oscuro (Superó Promedio)
+                elif pct_prev is not None and pct_prev > 0:
+                    bg_color_class = "kpi-bg-up-prev"       # Verde Pastel Claro (Superó Sem Anterior)
+
                 is_money = any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR', 'PRECIO'])
                 prefix = "Bs " if is_money else ""
                 val_formatted = f"{prefix}{val_curr:,.0f}" if (val_curr >= 100 or val_curr % 1 == 0) else f"{prefix}{val_curr:,.2f}"
                 
-                # CREACIÓN DEL DESGLOSE SI POSEE CATEGORÍAS
                 breakdown_html = ""
                 if df_current_rows is not None and not df_current_rows.empty:
                     categories_rows = df_current_rows[df_current_rows['Categoria_Clean'] != '']
@@ -453,11 +514,11 @@ if menu_option == "📊 Dashboards KPIs":
                         
                         breakdown_html = f'<div class="kpi-breakdown-box">{items_html}</div>'
 
-                card_class = "kpi-card-fallback" if is_fallback else "kpi-card"
+                fallback_class = "kpi-border-fallback" if is_fallback else ""
                 fallback_tag = f'<div><span class="badge-warning">⚠️ {actual_data_week}</span></div>' if is_fallback else ""
                 
                 html_code = (
-                    f'<div class="{card_class}">'
+                    f'<div class="kpi-card-base {bg_color_class} {fallback_class}">'
                     f'<div>'
                     f'<div class="kpi-card-header" title="{kpi}">{kpi}</div>'
                     f'<div class="kpi-resp-tag">👤 Resp: {resp}</div>'
