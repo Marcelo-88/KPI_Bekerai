@@ -172,7 +172,6 @@ FRIDOLIN_CSS = """
         padding: 1rem 0.5rem; border-bottom: 1px solid #F0ECE3; border-left: 5px solid transparent;
         border-radius: 4px; margin-bottom: 0.2rem;
     }
-    .task-row:last-child { border-bottom: none; }
     .task-row-pendiente { border-left-color: #E74C3C; }
     .task-row-proceso { border-left-color: #F39C12; }
     .task-row-finalizado { border-left-color: #27AE60; }
@@ -517,14 +516,43 @@ if menu_option == "📊 Dashboards KPIs":
                             
                 val_prev = None
                 prev_w_name = ""
+                avg_total = 0.0
+                
                 actual_week_idx_found = semanas_unicas.index(actual_data_week) if actual_data_week in semanas_unicas else -1
                 
-                if actual_week_idx_found > 0:
-                    prev_w_name = semanas_unicas[actual_week_idx_found - 1]
-                    prev_data = get_week_data(prev_w_name)
-                    if prev_data is not None:
-                        val_prev = float(prev_data['Valor'].sum())
+                # OBTENER CATEGORÍAS PRESENTES EN LA SEMANA ACTUAL
+                present_cats = []
+                if df_current_rows is not None and not df_current_rows.empty:
+                    present_cats = [c for c in df_current_rows['Categoria_Clean'].unique() if c != '']
                 
+                # CÁLCULO HOMOGÉNEO POR MISMO PAR DE CATEGORÍAS
+                if present_cats:
+                    # 1. VALOR SEMANA ANTERIOR (solo de las mismas categorías)
+                    if actual_week_idx_found > 0:
+                        prev_w_name = semanas_unicas[actual_week_idx_found - 1]
+                        rows_prev = df_kpi_series[(df_kpi_series['Semana'] == prev_w_name) & (df_kpi_series['Categoria_Clean'].isin(present_cats))]
+                        valid_prev = rows_prev[rows_prev['Valor'].notna()]
+                        if not valid_prev.empty:
+                            val_prev = float(valid_prev['Valor'].sum())
+                    
+                    # 2. PROMEDIO HISTÓRICO (solo de las mismas categorías)
+                    filtered_series = df_kpi_series[df_kpi_series['Categoria_Clean'].isin(present_cats)]
+                    weekly_totals = filtered_series.groupby('Semana')['Valor'].sum()
+                    valid_totals = weekly_totals[weekly_totals > 0]
+                    avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
+                else:
+                    # SI NO ES AGRUPADO POR CATEGORÍAS (KPI ESTÁNDAR)
+                    if actual_week_idx_found > 0:
+                        prev_w_name = semanas_unicas[actual_week_idx_found - 1]
+                        prev_data = get_week_data(prev_w_name)
+                        if prev_data is not None:
+                            val_prev = float(prev_data['Valor'].sum())
+                            
+                    weekly_totals = df_kpi_series.groupby('Semana')['Valor'].sum()
+                    valid_totals = weekly_totals[weekly_totals > 0]
+                    avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
+                
+                # VARIACIÓN VS SEMANA ANTERIOR
                 pct_prev = None
                 if val_prev is not None and val_prev != 0 and val_curr != 0:
                     pct_prev = ((val_curr - val_prev) / val_prev) * 100
@@ -537,10 +565,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
                     
-                weekly_totals = df_kpi_series.groupby('Semana')['Valor'].sum()
-                valid_totals = weekly_totals[weekly_totals > 0]
-                avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
-                
+                # VARIACIÓN VS PROMEDIO
                 pct_avg = None
                 if avg_total > 0 and val_curr != 0:
                     pct_avg = ((val_curr - avg_total) / avg_total) * 100
@@ -566,7 +591,7 @@ if menu_option == "📊 Dashboards KPIs":
                 elif any(ki in kpi_upper for ki in KPIS_INVERTIDOS):
                     if pct_prev is not None:
                         if pct_prev > 0:
-                            bg_color_class = "kpi-bg-drop"  # Subió = Malo (Rojo)
+                            bg_color_class = "kpi-bg-drop"  # Subió = Malo (Guindo)
                         elif pct_prev < 0:
                             bg_color_class = "kpi-bg-up"    # Bajó = Bueno (Verde Pistacho)
                         else:
@@ -580,7 +605,7 @@ if menu_option == "📊 Dashboards KPIs":
                         if pct_prev > 0:
                             bg_color_class = "kpi-bg-up"    # Subió = Bueno (Verde Pistacho)
                         elif pct_prev < 0:
-                            bg_color_class = "kpi-bg-drop"  # Bajó = Malo (Rojo)
+                            bg_color_class = "kpi-bg-drop"  # Bajó = Malo (Guindo)
                         else:
                             bg_color_class = "kpi-bg-neutral"
                     else:
