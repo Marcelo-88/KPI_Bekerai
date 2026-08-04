@@ -525,11 +525,6 @@ def load_data():
             df_vc = df_vc_raw.iloc[h_idx_vc + 1 :].copy()
             df_vc.columns = [str(c).strip() for c in df_vc_raw.iloc[h_idx_vc].values]
             df_vc = df_vc.dropna(how="all")
-            
-            # Limpieza numérica de la pestaña Ventas_Clima
-            for c in df_vc.columns:
-                if c != "Rango de la semana":
-                    df_vc[c] = df_vc[c].apply(parse_custom_number)
         else:
             df_vc = pd.DataFrame()
     else:
@@ -1170,12 +1165,12 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     )
 
 # ------------------------------------------
-# MÓDULO 3: ANÁLISIS CLIMA & FESTIVOS (COMPLETO)
+# MÓDULO NUEVO: ANÁLISIS CLIMA & FESTIVOS
 # ------------------------------------------
 elif menu_option == "🌤️ Análisis Clima & Festivos":
-    st.subheader("🌤️ Relación del Clima, Festividades y Producción en Santa Cruz, Bolivia")
+    st.subheader("🌤️ Relación del Clima, Festividades y Producción por Categorías")
 
-    # 1. TARJETA SUPERIOR: OPINIÓN ANALÍTICA E INTERPRETACIONAL
+    # 1. TARJETA SUPERIOR: OPINIÓN ANALÍTICA
     st.markdown(
         """
         <div class="analysis-card">
@@ -1212,124 +1207,35 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
         unsafe_allow_html=True,
     )
 
-    # 2. GRÁFICO INTERACTIVO DOBLE EJE TEMPERATURA VS PRODUCCIÓN POR CATEGORÍAS
-    st.markdown("#### 📈 Correlación Histórica: Temperatura (°C) vs Producción por Categorías")
-    
-    if not df_vc.empty:
-        col_g1, col_g2 = st.columns([2, 1])
-        
-        with col_g2:
-            st.markdown("##### ⚙️ Filtros del Gráfico")
-            
-            cat_cols = [c for c in df_vc.columns if c not in ["Rango de la semana", "Temp. Promedio (°C)", "Ventas"]]
-            selected_vc_cats = st.multiselect(
-                "Seleccionar Categorías a Visualizar:",
-                cat_cols,
-                default=cat_cols[:2] if len(cat_cols) >= 2 else cat_cols,
-            )
-            
-            rangos_semanas = list(df_vc["Rango de la semana"].unique())
-            selected_range = st.select_slider(
-                "Filtrar Período de Semanas:",
-                options=rangos_semanas,
-                value=(rangos_semanas[0], rangos_semanas[-1])
-            )
-            
-            # Filtrado del dataframe
-            start_idx = rangos_semanas.index(selected_range[0])
-            end_idx = rangos_semanas.index(selected_range[1])
-            df_vc_filtered = df_vc.iloc[start_idx : end_idx + 1].copy()
-
-        with col_g1:
-            fig_vc = make_subplots(specs=[[{"secondary_y": True}]])
-            
-            # Eje Primario: Línea de Temperatura
-            if "Temp. Promedio (°C)" in df_vc_filtered.columns:
-                fig_vc.add_trace(
-                    go.Scatter(
-                        x=df_vc_filtered["Rango de la semana"],
-                        y=df_vc_filtered["Temp. Promedio (°C)"],
-                        name="Temp. Promedio (°C)",
-                        mode="lines+markers",
-                        line=dict(color="#3498DB", width=3, dash="dot"),
-                        marker=dict(size=8, color="#2980B9"),
-                        hovertemplate="<b>Temp. Promedio</b>: %{y:.1f} °C<extra></extra>",
-                    ),
-                    secondary_y=False,
-                )
-            
-            # Eje Secundario: Categorías de Producción Elegidas
-            for idx, cat in enumerate(selected_vc_cats):
-                color = PASTEL_COLORS[idx % len(PASTEL_COLORS)]
-                fig_vc.add_trace(
-                    go.Scatter(
-                        x=df_vc_filtered["Rango de la semana"],
-                        y=df_vc_filtered[cat],
-                        name=cat,
-                        mode="lines+markers",
-                        line=dict(color=color, width=3),
-                        marker=dict(size=6),
-                        hovertemplate=f"<b>{cat}</b>: %{{y:,.0f}} Unid.<extra></extra>",
-                    ),
-                    secondary_y=True,
-                )
-                
-            fig_vc.update_layout(
-                title=dict(text="<b>Evolución Semanal de Temperatura vs Producción</b>", font=dict(size=15, color="#7A1C29")),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="#FFFFFF",
-                height=420,
-                hovermode="x unified",
-                legend=dict(orientation="h", yanchor="top", y=-0.25, xanchor="center", x=0.5),
-                margin=dict(l=40, r=40, t=40, b=80),
-            )
-            
-            fig_vc.update_yaxes(title_text="Temperatura (°C)", showgrid=True, gridcolor="#EFECE6", secondary_y=False)
-            fig_vc.update_yaxes(title_text="Unidades Producidas", showgrid=False, secondary_y=True)
-            
-            st.plotly_chart(fig_vc, use_container_width=True, key="chart_vc_main")
-            
-    else:
-        st.warning("No se encontraron datos en la pestaña 'Ventas_Clima'.")
-
-    st.markdown("---")
-
-    # 3. SECCIÓN INFERIOR EN 2 COLUMNAS: MÉTRICAS CLIMÁTICAS HISTÓRICAS & CALENDARIO
+    # 2. SECCIÓN INFERIOR EN 2 COLUMNAS
     col_left, col_right = st.columns(2)
 
     with col_left:
-        # Ponderación real calculada o general de datos climatológicos
-        if not df_vc.empty and "Temp. Promedio (°C)" in df_vc.columns:
-            temp_avg = df_vc["Temp. Promedio (°C)"].mean()
-            temp_min = df_vc["Temp. Promedio (°C)"].min()
-            temp_max = df_vc["Temp. Promedio (°C)"].max()
-        else:
-            temp_avg, temp_min, temp_max = 21.8, 11.0, 32.9
-
+        # Ponderación de datos climatológicos promedio
         st.markdown(
-            f"""
+            """
             <div class="sub-card">
                 <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
                 <div class="weather-grid">
                     <div class="weather-item">
                         <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
-                        <div class="weather-val">{temp_avg:.1f} °C</div>
+                        <div class="weather-val">21.8 °C</div>
                     </div>
                     <div class="weather-item">
                         <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
-                        <div class="weather-val">{temp_min:.1f} °C</div>
+                        <div class="weather-val">11.0 °C</div>
                     </div>
                     <div class="weather-item">
                         <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
-                        <div class="weather-val">{temp_max:.1f} °C</div>
+                        <div class="weather-val">32.9 °C</div>
                     </div>
                     <div class="weather-item">
                         <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
-                        <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Cálido Húmedo / Surazos</div>
+                        <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
                     </div>
                 </div>
                 <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
-                    *Valores consolidados del histórico semanal registrado en base de datos.
+                    *Valores consolidados del histórico semanal registrador en base de datos.
                 </p>
             </div>
             """,
@@ -1337,7 +1243,7 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
         )
 
     with col_right:
-        # Calendario de Festividades Santa Cruz
+        # Calendario de Festividades
         festivos_list = [
             ("Año Nuevo (Feriado Oficial)", "01/01/2026"),
             ("Fundación del Estado Plurinacional", "22/01/2026"),
