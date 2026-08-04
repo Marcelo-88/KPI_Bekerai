@@ -233,9 +233,9 @@ def load_data():
     return df_kpi_long, df_tasks
 
 # ==========================================
-# 3. HELPER DE GRÁFICAS CON AUTO-ESCALA DINÁMICA Y HOVER INDIVIDUAL
+# 3. HELPER DE GRÁFICAS CON FILTRO ANTI-PICOS Y AUTO-ESCALA
 # ==========================================
-def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores", use_log_scale=False):
+def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores", filter_outliers=False):
     fig = go.Figure()
     
     existing_kpis = [k for k in kpi_list if k in df_kpis['Medible'].values]
@@ -250,7 +250,12 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         return fig
 
     for idx, kpi in enumerate(existing_kpis):
-        sub_df = df_kpis[df_kpis['Medible'] == kpi]
+        sub_df = df_kpis[df_kpis['Medible'] == kpi].copy()
+        
+        # Si se activa el filtro anti-picos erróneos (ej. 50.000 en Sem 30 de Salados)
+        if filter_outliers and "Bs" not in unit_label:
+            sub_df = sub_df[sub_df['Valor'] <= 25000]
+
         if sub_df.empty:
             continue
             
@@ -259,7 +264,6 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         is_money = "Bs" in unit_label or any(m in kpi.upper() for m in ['VENTAS', 'PAGO', 'C X P', 'EFECTIVO', 'COMPRAS', 'VALOR'])
         val_prefix = "Bs " if is_money else ""
         
-        # Etiqueta individual por línea (Hover exacto)
         hover_template = (
             f"<b>{kpi}</b><br>"
             "🗓️ %{x}<br>"
@@ -276,9 +280,6 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             marker=dict(size=7, color=color, symbol='circle'),
             hovertemplate=hover_template
         ))
-
-    # Configuración de tipo de escala del eje Y (Lineal o Logarítmica)
-    y_axis_type = "log" if use_log_scale else "linear"
         
     fig.update_layout(
         title=dict(
@@ -298,13 +299,12 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
             showgrid=True, 
             gridcolor="#EFECE6",
             tickformat=",.0f",
-            type=y_axis_type,  # Soporta escala logarítmica si hay picos gigantes
-            autorange=True     # Recalcula dinámicamente el min y max de los datos visibles
+            autorange=True # Fuerza la escala Y dinámica al contenido actual
         ),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='#FFFFFF',
         height=height,
-        hovermode="closest", # MUESTRA ÚNICAMENTE LA LÍNEA SOBRE LA QUE ESTÁ EL CURSOR
+        hovermode="closest", # Muestra SOLO el dato de la línea sobre la que asomas el ratón
         hoverlabel=dict(
             bgcolor="#FFFFFF",
             font_size=12,
@@ -329,11 +329,11 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
 # MODAL PANTALLA COMPLETA
 if hasattr(st, "dialog"):
     @st.dialog("🔍 Vista Ampliada del Gráfico", width="large")
-    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores", use_log_scale=False):
-        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=600, unit_label=unit_label, use_log_scale=use_log_scale)
+    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores", filter_outliers=False):
+        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=600, unit_label=unit_label, filter_outliers=filter_outliers)
         st.plotly_chart(fig, use_container_width=True, key=f"dialog_{title}")
 else:
-    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores", use_log_scale=False):
+    def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores", filter_outliers=False):
         pass
 
 # ==========================================
@@ -500,14 +500,13 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
         all_kpis_in_db = list(df_kpis['Medible'].unique())
         
         def find_kpis_exact_or_keyword(category_list):
-            """Filtra los KPIs para asociarlos exactamente a sus familias de métricas"""
+            """Filtra los KPIs asociados estrictamente a sus nombres de categoría"""
             matched = []
             for k in all_kpis_in_db:
                 k_upper = str(k).upper()
                 for cat in category_list:
                     cat_upper = cat.upper()
-                    # Mapeo exacto de palabras clave por categoría
-                    if cat_upper in k_upper or (cat_upper == "TORTAS" and "TORTA" in k_upper):
+                    if cat_upper in k_upper or (cat_upper == "TORTAS" and "TORTA" in k_upper) or (cat_upper == "SALADOS" and "SALADO" in k_upper):
                         matched.append(k)
                         break
             return list(set(matched))
@@ -540,7 +539,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                 )
             
             with sub_col_scale:
-                use_log_scale_card2 = st.checkbox("📐 Escala Log", value=False, help="Activa esta opción si tienes métricas de 50.000 junto a métricas de 100 para visualizar ambas en detalle.")
+                clean_outliers = st.checkbox("🧹 Filtrar Pico Sem 30", value=True, help="Oculta el dato anómalo de 50.935 registrado en la Semana 30 para visualizar la escala normal.")
 
             kpi_g2 = find_kpis_exact_or_keyword(selected_cats) if selected_cats else []
             
@@ -550,7 +549,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                 title="Flujo de Categorías Seleccionadas", 
                 height=380, 
                 unit_label="Unidades",
-                use_log_scale=use_log_scale_card2
+                filter_outliers=clean_outliers
             )
             st.plotly_chart(fig2, use_container_width=True, key="card_2_main")
             
@@ -560,7 +559,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     kpi_g2, 
                     "Flujo de Categorías Seleccionadas", 
                     unit_label="Unidades",
-                    use_log_scale=use_log_scale_card2
+                    filter_outliers=clean_outliers
                 )
 
         st.markdown("---")
