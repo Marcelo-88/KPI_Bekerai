@@ -168,7 +168,7 @@ def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", hei
         fig.update_layout(height=height, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='#FFFFFF')
         return fig
 
-    # Usar Eje Y Secundario para volúmenes masivos (>20.000 como Prod Salado)
+    # Usar Eje Y Secundario para volúmenes masivos (>15.000 como Prod Salado)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     for idx, kpi in enumerate(existing_kpis):
@@ -265,7 +265,7 @@ st.markdown("""
 # ==========================================
 
 # ------------------------------------------
-# MÓDULO 1: DASHBOARDS KPIS (TARJETAS RESTAURADAS)
+# MÓDULO 1: DASHBOARDS KPIS
 # ------------------------------------------
 if menu_option == "📊 Dashboards KPIs":
     st.subheader("📌 Resumen de Indicadores Semanales")
@@ -376,7 +376,7 @@ if menu_option == "📊 Dashboards KPIs":
                     st.markdown(html_code, unsafe_allow_html=True)
 
 # ------------------------------------------
-# MÓDULO 2: COMPARADOR KPI vs KPI
+# MÓDULO 2: COMPARADOR KPI vs KPI (TODAS LAS GRÁFICAS CON MAXIMIZAR)
 # ------------------------------------------
 elif menu_option == "🔀 Comparador KPI vs KPI":
     st.subheader("🔀 Análisis Comparativo Multi-KPI")
@@ -403,6 +403,8 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             st.markdown('<div class="compare-card-title">💵 1. Ventas vs Pagos vs CxP vs Efectivo (Bs)</div>', unsafe_allow_html=True)
             fig1 = render_multi_kpi_chart(df_kpis, kpi_g1, title="Finanzas & Flujo de Caja", height=380, unit_label="Monto en Bs")
             st.plotly_chart(fig1, use_container_width=True, key="card_1_main")
+            if st.button("🔍 Maximizar Gráfico 1", key="btn_max_1", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g1, "Finanzas & Flujo de Caja", unit_label="Monto en Bs")
 
         with c2:
             st.markdown('<div class="compare-card-title">🍰 2. Producción, Envíos y Bajas por Categoría</div>', unsafe_allow_html=True)
@@ -412,7 +414,6 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             kpi_g2 = find_kpis_exact_or_keyword(selected_cats) if selected_cats else []
             fig2 = render_multi_kpi_chart(df_kpis, kpi_g2, title="Flujo de Categorías Seleccionadas", height=380, unit_label="Unidades")
             st.plotly_chart(fig2, use_container_width=True, key="card_2_main")
-            
             if st.button("🔍 Maximizar Gráfico 2", key="btn_max_2", use_container_width=True):
                 show_full_graph_dialog(df_kpis, kpi_g2, "Flujo de Categorías Seleccionadas", unit_label="Unidades")
 
@@ -422,6 +423,8 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             st.markdown('<div class="compare-card-title">📣 3. Inversión Marketing vs Ventas (Bs)</div>', unsafe_allow_html=True)
             fig3 = render_multi_kpi_chart(df_kpis, kpi_g3, title="Marketing & Retorno", height=380, unit_label="Monto en Bs")
             st.plotly_chart(fig3, use_container_width=True, key="card_3_main")
+            if st.button("🔍 Maximizar Gráfico 3", key="btn_max_3", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g3, "Marketing & Retorno", unit_label="Monto en Bs")
 
         with c4:
             st.markdown('<div class="compare-card-title">🛠️ 4. Comparador Libre</div>', unsafe_allow_html=True)
@@ -429,6 +432,8 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
             if selected_custom:
                 fig4 = render_multi_kpi_chart(df_kpis, selected_custom, title="Selección Libre Personalizada", height=350, unit_label="Valores")
                 st.plotly_chart(fig4, use_container_width=True, key="card_4_main")
+                if st.button("🔍 Maximizar Gráfico 4", key="btn_max_4", use_container_width=True):
+                    show_full_graph_dialog(df_kpis, selected_custom, "Selección Libre Personalizada", unit_label="Valores")
 
 # ------------------------------------------
 # MÓDULO 3: GESTIÓN DE TAREAS
