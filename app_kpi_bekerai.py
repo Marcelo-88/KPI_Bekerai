@@ -1235,56 +1235,54 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
 
     with col_left:
         # Ponderación de datos climatológicos promedio + Pronóstico Próximas 2 Semanas
-        st.markdown(
-            """
-            <div class="sub-card">
-                <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
-                <div class="weather-grid">
-                    <div class="weather-item">
-                        <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
-                        <div class="weather-val">21.8 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
-                        <div class="weather-val">11.0 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
-                        <div class="weather-val">32.9 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
-                        <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
-                    </div>
+        left_card_html = """
+        <div class="sub-card">
+            <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
+            <div class="weather-grid">
+                <div class="weather-item">
+                    <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
+                    <div class="weather-val">21.8 °C</div>
                 </div>
-                
-                <div style="margin-top: 1.5rem; font-weight: 700; color: #7A1C29; font-size: 1rem;">
-                    🔮 Pronóstico Climatológico (Próximas 2 Semanas)
+                <div class="weather-item">
+                    <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
+                    <div class="weather-val">11.0 °C</div>
                 </div>
-
-                <div class="forecast-card">
-                    <div class="forecast-header">🗓️ Semana 1 (Semana Entrante)</div>
-                    <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>28.5 °C</b></div>
-                    <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>18.2 °C</b></div>
-                    <div class="forecast-detail"><span>Precipitaciones:</span> <b>12 mm (Baja probabilidad)</b></div>
-                    <div class="forecast-detail"><span>Estado:</span> <b>Parcialmente Nublado / Caluroso</b></div>
+                <div class="weather-item">
+                    <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
+                    <div class="weather-val">32.9 °C</div>
                 </div>
-
-                <div class="forecast-card">
-                    <div class="forecast-header">🗓️ Semana 2 (Siguiente Semana)</div>
-                    <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>22.1 °C</b></div>
-                    <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>13.5 °C</b></div>
-                    <div class="forecast-detail"><span>Precipitaciones:</span> <b>45 mm (Ingreso de Surazo)</b></div>
-                    <div class="forecast-detail"><span>Estado:</span> <b>Frío / Lluvias Moderadas ❄️</b></div>
+                <div class="weather-item">
+                    <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
+                    <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
                 </div>
-
-                <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
-                    *Valores consolidados del histórico semanal registrado y proyección meteorológica oficial.
-                </p>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+            
+            <div style="margin-top: 1.5rem; font-weight: 700; color: #7A1C29; font-size: 1rem;">
+                🔮 Pronóstico Climatológico (Próximas 2 Semanas)
+            </div>
+
+            <div class="forecast-card">
+                <div class="forecast-header">🗓️ Semana 1 (Semana Entrante)</div>
+                <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>28.5 °C</b></div>
+                <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>18.2 °C</b></div>
+                <div class="forecast-detail"><span>Precipitaciones:</span> <b>12 mm (Baja probabilidad)</b></div>
+                <div class="forecast-detail"><span>Estado:</span> <b>Parcialmente Nublado / Caluroso</b></div>
+            </div>
+
+            <div class="forecast-card">
+                <div class="forecast-header">🗓️ Semana 2 (Siguiente Semana)</div>
+                <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>22.1 °C</b></div>
+                <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>13.5 °C</b></div>
+                <div class="forecast-detail"><span>Precipitaciones:</span> <b>45 mm (Ingreso de Surazo)</b></div>
+                <div class="forecast-detail"><span>Estado:</span> <b>Frío / Lluvias Moderadas ❄️</b></div>
+            </div>
+
+            <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
+                *Valores consolidados del histórico semanal registrado y proyección meteorológica oficial.
+            </p>
+        </div>
+        """
+        st.markdown(left_card_html, unsafe_allow_html=True)
 
     with col_right:
         # Calendario de Festividades
@@ -1313,17 +1311,15 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
             ]
         )
 
-        st.markdown(
-            f"""
-            <div class="sub-card">
-                <div class="sub-card-title">📅 Calendario de Festividades & Días Especiales</div>
-                <div class="festivos-container">
-                    {festivos_html}
-                </div>
+        right_card_html = f"""
+        <div class="sub-card">
+            <div class="sub-card-title">📅 Calendario de Festividades & Días Especiales</div>
+            <div class="festivos-container">
+                {festivos_html}
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        </div>
+        """
+        st.markdown(right_card_html, unsafe_allow_html=True)
 
 # ------------------------------------------
 # MÓDULO 4: GESTIÓN DE TAREAS
