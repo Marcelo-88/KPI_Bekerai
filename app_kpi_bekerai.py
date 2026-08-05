@@ -79,12 +79,6 @@ KPIS_NEUTROS = [
 
 FRIDOLIN_CSS = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    
     .stApp { background-color: #F7F4EE; color: #2D2B2A; }
     .main-header {
         background-color: #7A1C29; padding: 1.2rem; border-radius: 14px;
@@ -159,110 +153,6 @@ FRIDOLIN_CSS = """
     .badge-warning { color: #D35400; font-weight: 700; background: #FDEBD0; padding: 1px 5px; border-radius: 4px; font-size: 0.68rem; display: inline-block; }
     .kpi-resp-tag { font-size: 0.73rem; font-weight: 600; margin-bottom: 0.1rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
-
-    /* ESTILOS DE TARJETA ANALÍTICA ELEGANTE */
-    .analysis-card {
-        background: #FFFFFF;
-        border-radius: 16px;
-        padding: 1.8rem;
-        border: 1px solid #EAE4D9;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.03);
-        margin-bottom: 1.8rem;
-    }
-    .analysis-title {
-        color: #7A1C29;
-        font-size: 1.35rem;
-        font-weight: 800;
-        margin-bottom: 0.2rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .analysis-author {
-        color: #8C7B6B;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 1.2rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .analysis-section-hdr {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #2D2B2A;
-        margin-top: 1.2rem;
-        margin-bottom: 0.6rem;
-        border-left: 4px solid #7A1C29;
-        padding-left: 8px;
-    }
-    .analysis-list {
-        margin: 0;
-        padding-left: 1.2rem;
-        font-size: 0.93rem;
-        line-height: 1.6;
-        color: #4A4644;
-    }
-    .analysis-list li {
-        margin-bottom: 0.5rem;
-    }
-
-    /* ESTILOS DE MÓDULOS INFERIORES EN COLUMNAS */
-    .sub-card {
-        background: #FFFFFF;
-        border-radius: 14px;
-        padding: 1.3rem;
-        border: 1px solid #EAE4D9;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-        height: 100%;
-    }
-    .sub-card-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #7A1C29;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .weather-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-    .weather-item {
-        background: #FDFBF7;
-        border: 1px solid #F0EAE1;
-        border-radius: 10px;
-        padding: 0.8rem;
-        text-align: center;
-    }
-    .weather-val {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: #7A1C29;
-        margin-top: 2px;
-    }
-    .weather-lbl {
-        font-size: 0.78rem;
-        color: #7F8C8D;
-        font-weight: 600;
-    }
-    .festivos-container {
-        max-height: 280px;
-        overflow-y: auto;
-        padding-right: 5px;
-    }
-    .festivo-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.6rem 0.8rem;
-        border-bottom: 1px solid #F3EFEA;
-        font-size: 0.85rem;
-    }
-    .festivo-row:last-child { border-bottom: none; }
-    .festivo-name { font-weight: 600; color: #2D2B2A; }
-    .festivo-date { font-weight: 700; color: #D35400; background: #FDEBD0; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem; }
 
     .task-container-card {
         background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 16px;
@@ -460,9 +350,31 @@ def load_data():
                 axis=1,
             )
         else:
-            df_kpi_long = pd.DataFrame()
+            df_kpi_long = pd.DataFrame(
+                columns=[
+                    "Responsable",
+                    "Departamento",
+                    "Medible",
+                    "Categoria_Clean",
+                    "Medible_Full",
+                    "Semana",
+                    "Valor_Raw",
+                    "Valor",
+                ]
+            )
     else:
-        df_kpi_long = pd.DataFrame()
+        df_kpi_long = pd.DataFrame(
+            columns=[
+                "Responsable",
+                "Departamento",
+                "Medible",
+                "Categoria_Clean",
+                "Medible_Full",
+                "Semana",
+                "Valor_Raw",
+                "Valor",
+            ]
+        )
 
     # PARSER PESTAÑA TAREAS
     df_tareas_raw = sheets.get("Tareas", pd.DataFrame())
@@ -507,30 +419,11 @@ def load_data():
                 .str.strip()
             )
         else:
-            df_tasks = pd.DataFrame()
+            df_tasks = df_tareas_raw
     else:
         df_tasks = pd.DataFrame()
 
-    # PARSER PESTAÑA VENTAS_CLIMA (Para Módulo Clima)
-    df_vc_raw = sheets.get("Ventas_Clima", pd.DataFrame())
-    if not df_vc_raw.empty:
-        h_idx_vc = None
-        for idx, row in df_vc_raw.iterrows():
-            row_vals = [str(val).strip() for val in row.values]
-            if any(h in row_vals for h in ["Rango de la semana", "Ventas", "Temp. Promedio (°C)"]):
-                h_idx_vc = idx
-                break
-        
-        if h_idx_vc is not None:
-            df_vc = df_vc_raw.iloc[h_idx_vc + 1 :].copy()
-            df_vc.columns = [str(c).strip() for c in df_vc_raw.iloc[h_idx_vc].values]
-            df_vc = df_vc.dropna(how="all")
-        else:
-            df_vc = pd.DataFrame()
-    else:
-        df_vc = pd.DataFrame()
-
-    return df_kpi_long, df_tasks, df_vc
+    return df_kpi_long, df_tasks
 
 
 # ==========================================
@@ -671,7 +564,6 @@ menu_option = st.sidebar.radio(
     [
         "📊 Dashboards KPIs",
         "🔀 Comparador KPI vs KPI",
-        "🌤️ Análisis Clima & Festivos",
         "📝 Gestión de Tareas",
         "🏆 Scorecard & Cumplimiento",
     ],
@@ -687,7 +579,7 @@ st.sidebar.link_button(
 )
 
 try:
-    df_kpis, df_tasks, df_vc = load_data()
+    df_kpis, df_tasks = load_data()
 except Exception as e:
     st.error(f"⚠️ Error al conectar con Google Sheets: {e}")
     st.stop()
@@ -823,6 +715,7 @@ if menu_option == "📊 Dashboards KPIs":
                         if c != ""
                     ]
 
+                # OBTENER FILAS DE LA SEMANA ANTERIOR REGISTRADA
                 df_prev_rows = None
                 if actual_week_idx_found > 0:
                     for w_idx_prev in range(actual_week_idx_found - 1, -1, -1):
@@ -833,6 +726,7 @@ if menu_option == "📊 Dashboards KPIs":
                             df_prev_rows = p_data
                             break
 
+                # CÁLCULO DE COMPARACIÓN GLOBAL Y PROMEDIO LIOPIO DE NULOS
                 if present_cats:
                     if df_prev_rows is not None:
                         valid_prev = df_prev_rows[
@@ -845,6 +739,7 @@ if menu_option == "📊 Dashboards KPIs":
                     filtered_series = df_kpi_series[
                         df_kpi_series["Categoria_Clean"].isin(present_cats)
                     ]
+                    # Promedio considerando solo semanas con datos reales (sin nulos)
                     valid_series = filtered_series.dropna(subset=["Valor"])
                     if not valid_series.empty:
                         weekly_totals = valid_series.groupby("Semana")["Valor"].sum()
@@ -860,6 +755,7 @@ if menu_option == "📊 Dashboards KPIs":
                         valid_totals = weekly_totals[weekly_totals > 0]
                         avg_total = valid_totals.mean() if not valid_totals.empty else 0.0
 
+                # VARIACIÓN GLOBAL VS SEMANA ANTERIOR
                 pct_prev = None
                 if val_prev is not None and val_prev != 0 and val_curr != 0:
                     pct_prev = ((val_curr - val_prev) / val_prev) * 100
@@ -872,6 +768,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_prev_html = '<span class="badge-neutral">-- N/A vs sem anterior</span>'
 
+                # VARIACIÓN GLOBAL VS PROMEDIO
                 pct_avg = None
                 if avg_total > 0 and val_curr != 0:
                     pct_avg = ((val_curr - avg_total) / avg_total) * 100
@@ -884,6 +781,7 @@ if menu_option == "📊 Dashboards KPIs":
                 else:
                     var_avg_html = '<span class="badge-neutral">-- N/A vs prom</span>'
 
+                # COLORIMETRÍA PREDETERMINADA
                 kpi_upper = kpi.upper().strip()
 
                 if any(kn in kpi_upper for kn in KPIS_NEUTROS):
@@ -911,6 +809,7 @@ if menu_option == "📊 Dashboards KPIs":
 
                 val_formatted = format_kpi_value(val_curr, kpi)
 
+                # DESGLOSE POR CATEGORÍA CON SU % INDIVIDUAL vs SEMANA ANTERIOR
                 breakdown_html = ""
                 if df_current_rows is not None and not df_current_rows.empty:
                     categories_rows = df_current_rows[
@@ -923,6 +822,7 @@ if menu_option == "📊 Dashboards KPIs":
                             c_val = row_cat["Valor"]
                             c_formatted = format_kpi_value(c_val, kpi)
                             
+                            # Buscar valor de esta categoría específica en la semana anterior
                             cat_pct_html = ""
                             if df_prev_rows is not None and not df_prev_rows.empty:
                                 prev_cat_row = df_prev_rows[
@@ -1165,124 +1065,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     )
 
 # ------------------------------------------
-# MÓDULO NUEVO: ANÁLISIS CLIMA & FESTIVOS
-# ------------------------------------------
-elif menu_option == "🌤️ Análisis Clima & Festivos":
-    st.subheader("🌤️ Relación del Clima, Festividades y Producción por Categorías")
-
-    # 1. TARJETA SUPERIOR: OPINIÓN ANALÍTICA
-    st.markdown(
-        """
-        <div class="analysis-card">
-            <div class="analysis-title">💡 Opinión Analítica e Interpretación Comercial</div>
-            <div class="analysis-author">POR: ANALISTA COMERCIAL & DE VENTAS (GEMINI)</div>
-            
-            <p style="font-size: 0.95rem; line-height: 1.5; color: #333;">
-                Análisis cualitativo y porcentual basado en la relación de Ventas Totales semanales, Clima en Santa Cruz y la Producción por Categorías (Panadería, Pasteles Individuales, Postres Enteros, Salados y Tortas):
-            </p>
-            
-            <div class="analysis-section-hdr">🌡️ Sensibilidad al Clima (Surazos y Días Fríos)</div>
-            <ul class="analysis-list">
-                <li><b>Categoría más impactada (Salados):</b> Ante caídas bruscas de temperatura (11°C - 13°C), la demanda de salados es la que más se dispara, registrando incrementos de producción de hasta <b>+150% a +200%</b> frente a sus semanas promedio.</li>
-                <li><b>Efecto en Tortas y Repostería:</b> Muestran un crecimiento moderado del <b>+80% al +100%</b> durante frentes fríos, asociado al acompañamiento con bebidas calientes y reuniones en espacio cerrado.</li>
-            </ul>
-
-            <div class="analysis-section-hdr">🎉 Impacto de Festividades sin "Efecto Regalo"</div>
-            <ul class="analysis-list">
-                <li><b>Carnaval:</b> Provoca una caída general de volumen de aprox. <b>-10% a -15%</b> en salón y salados por el desplazamiento de la población fuera de la ciudad.</li>
-                <li><b>Semana Santa y Feriados Religiosos:</b> Mantienen ventas estables reasignando el mix: la producción de <b>Pasteles Individuales y Salados</b> crece cerca de un <b>+25%</b>, impulsada por consumo rápido y reuniones familiares.</li>
-            </ul>
-
-            <div class="analysis-section-hdr">🔍 Análisis de Fondo: Comportamiento Base (Sin Picos Comerciales)</div>
-            <p style="font-size: 0.85rem; color: #7F8C8D; margin-bottom: 0.5rem; font-style: italic;">
-                Descartando las fechas con fuerte "efecto regalo" (Día de la Madre, Padre y Niño), donde la demanda ocurre independientemente del clima:
-            </p>
-            <ul class="analysis-list">
-                <li><b>Salados es la categoría más vulnerable al clima:</b> 100% reactiva. En semanas calurosas (27°C - 32°C), la producción cae hasta un <b>-30%</b> respecto a su media.</li>
-                <li><b>Tortas y Postres Enteros son "Resistentes al Clima":</b> En semanas normales o festivos menores, el volumen de producción varía muy poco (±10%), respondiendo a eventos personales (cumpleaños) más que al clima.</li>
-                <li><b>Pasteles Individuales como amortiguador:</b> Categoría constante todo el año. Ante climas extremos amortigua variaciones con cambios mínimos (5% a 8%).</li>
-            </ul>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # 2. SECCIÓN INFERIOR EN 2 COLUMNAS
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        # Ponderación de datos climatológicos promedio
-        st.markdown(
-            """
-            <div class="sub-card">
-                <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
-                <div class="weather-grid">
-                    <div class="weather-item">
-                        <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
-                        <div class="weather-val">21.8 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
-                        <div class="weather-val">11.0 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
-                        <div class="weather-val">32.9 °C</div>
-                    </div>
-                    <div class="weather-item">
-                        <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
-                        <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
-                    </div>
-                </div>
-                <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
-                    *Valores consolidados del histórico semanal registrador en base de datos.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with col_right:
-        # Calendario de Festividades
-        festivos_list = [
-            ("Año Nuevo (Feriado Oficial)", "01/01/2026"),
-            ("Fundación del Estado Plurinacional", "22/01/2026"),
-            ("Fiesta de la Virgen de la Candelaria", "02/02/2026"),
-            ("Lunes y Martes de Carnaval", "16-17/02/2026"),
-            ("Día del Padre (Día Especial)", "19/03/2026"),
-            ("Viernes Santo (Feriado Oficial)", "03/04/2026"),
-            ("Día del Niño Boliviano", "12/04/2026"),
-            ("Día del Trabajo (Feriado Oficial)", "01/05/2026"),
-            ("Día de la Madre Boliviana", "27/05/2026"),
-            ("Corpus Christi (Feriado Oficial)", "04/06/2026"),
-            ("Año Nuevo Andino Amazónico", "21/06/2026"),
-            ("Día de la Independencia de Bolivia", "06/08/2026"),
-            ("Aniversario de Santa Cruz", "24/09/2026"),
-            ("Todos los Santos", "01-02/11/2026"),
-            ("Navidad (Feriado Oficial)", "25/12/2026"),
-        ]
-
-        festivos_html = "".join(
-            [
-                f'<div class="festivo-row"><span class="festivo-name">🎉 {nombre}</span><span class="festivo-date">{fecha}</span></div>'
-                for nombre, fecha in festivos_list
-            ]
-        )
-
-        st.markdown(
-            f"""
-            <div class="sub-card">
-                <div class="sub-card-title">📅 Calendario de Festividades & Días Especiales</div>
-                <div class="festivos-container">
-                    {festivos_html}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-# ------------------------------------------
-# MÓDULO 4: GESTIÓN DE TAREAS
+# MÓDULO 3: GESTIÓN DE TAREAS
 # ------------------------------------------
 elif menu_option == "📝 Gestión de Tareas":
     st.subheader("📝 Lista de Tareas Operativas EOS")
@@ -1490,7 +1273,7 @@ elif menu_option == "📝 Gestión de Tareas":
                         st.markdown(summary_html, unsafe_allow_html=True)
 
 # ------------------------------------------
-# MÓDULO 5: SCORECARD & CUMPLIMIENTO
+# MÓDULO 4: SCORECARD & CUMPLIMIENTO
 # ------------------------------------------
 elif menu_option == "🏆 Scorecard & Cumplimiento":
     st.subheader("🏆 Cumplimiento por Responsable")
