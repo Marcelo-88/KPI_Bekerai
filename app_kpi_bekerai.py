@@ -381,7 +381,6 @@ def format_kpi_value(val, medible_name):
 
 @st.cache_data(ttl=60)
 def load_data():
-    # Optimización: Cargar únicamente las pestañas requeridas
     sheets = pd.read_excel(
         EXCEL_URL, 
         sheet_name=["KPI", "Tareas", "Ventas_Clima"], 
@@ -1191,7 +1190,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     )
 
 # ------------------------------------------
-# MÓDULO: ANÁLISIS CLIMA & FESTIVOS
+# MÓDULO 3: ANÁLISIS CLIMA & FESTIVOS
 # ------------------------------------------
 elif menu_option == "🌤️ Análisis Clima & Festivos":
     st.subheader("🌤️ Relación del Clima, Festividades y Producción por Categorías")
