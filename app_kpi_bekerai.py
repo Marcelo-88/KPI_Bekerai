@@ -248,7 +248,7 @@ FRIDOLIN_CSS = """
         font-weight: 600;
     }
     .festivos-container {
-        max-height: 380px;
+        max-height: 280px;
         overflow-y: auto;
         padding-right: 5px;
     }
@@ -263,29 +263,6 @@ FRIDOLIN_CSS = """
     .festivo-row:last-child { border-bottom: none; }
     .festivo-name { font-weight: 600; color: #2D2B2A; }
     .festivo-date { font-weight: 700; color: #D35400; background: #FDEBD0; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem; }
-
-    .forecast-card {
-        background: #FDFBF7;
-        border: 1px solid #EAE4D9;
-        border-radius: 10px;
-        padding: 0.8rem;
-        margin-top: 10px;
-    }
-    .forecast-header {
-        font-weight: 700;
-        color: #7A1C29;
-        font-size: 0.85rem;
-        margin-bottom: 0.4rem;
-        border-bottom: 1px dashed #E2DCD2;
-        padding-bottom: 0.2rem;
-    }
-    .forecast-detail {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        color: #4A4644;
-        margin-bottom: 0.2rem;
-    }
 
     .task-container-card {
         background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 16px;
@@ -325,7 +302,9 @@ st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 # ==========================================
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
-ONLINE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/edit"
+ONLINE_SHEET_URL = (
+    f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/edit"
+)
 
 
 def parse_custom_number(val):
@@ -381,11 +360,7 @@ def format_kpi_value(val, medible_name):
 
 @st.cache_data(ttl=60)
 def load_data():
-    sheets = pd.read_excel(
-        EXCEL_URL, 
-        sheet_name=["KPI", "Tareas", "Ventas_Clima"], 
-        header=None
-    )
+    sheets = pd.read_excel(EXCEL_URL, sheet_name=None, header=None)
 
     # PARSER PESTAÑA KPI
     df_kpi_raw = sheets.get("KPI", pd.DataFrame())
@@ -536,7 +511,7 @@ def load_data():
     else:
         df_tasks = pd.DataFrame()
 
-    # PARSER PESTAÑA VENTAS_CLIMA
+    # PARSER PESTAÑA VENTAS_CLIMA (Para Módulo Clima)
     df_vc_raw = sheets.get("Ventas_Clima", pd.DataFrame())
     if not df_vc_raw.empty:
         h_idx_vc = None
@@ -1190,99 +1165,82 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                     )
 
 # ------------------------------------------
-# MÓDULO 3: ANÁLISIS CLIMA & FESTIVOS
+# MÓDULO NUEVO: ANÁLISIS CLIMA & FESTIVOS
 # ------------------------------------------
 elif menu_option == "🌤️ Análisis Clima & Festivos":
     st.subheader("🌤️ Relación del Clima, Festividades y Producción por Categorías")
 
     # 1. TARJETA SUPERIOR: OPINIÓN ANALÍTICA
-    analysis_html = """
-    <div class="analysis-card">
-        <div class="analysis-title">💡 Opinión Analítica e Interpretación Comercial</div>
-        <div class="analysis-author">POR: ANALISTA COMERCIAL & DE VENTAS</div>
-        
-        <p style="font-size: 0.95rem; line-height: 1.5; color: #333;">
-            Análisis cualitativo y porcentual basado en la relación de Ventas Totales semanales, Clima en Santa Cruz y la Producción por Categorías (Panadería, Pasteles Individuales, Postres Enteros, Salados y Tortas):
-        </p>
-        
-        <div class="analysis-section-hdr">🌡️ Sensibilidad al Clima (Surazos y Días Fríos)</div>
-        <ul class="analysis-list">
-            <li><b>Categoría más impactada (Salados):</b> Ante caídas bruscas de temperatura (11°C - 13°C), la demanda de salados es la que más se dispara, registrando incrementos de producción de hasta <b>+150% a +200%</b> frente a sus semanas promedio.</li>
-            <li><b>Efecto en Tortas y Repostería:</b> Muestran un crecimiento moderado del <b>+80% al +100%</b> durante frentes fríos, asociado al acompañamiento con bebidas calientes y reuniones en espacio cerrado.</li>
-        </ul>
+    st.markdown(
+        """
+        <div class="analysis-card">
+            <div class="analysis-title">💡 Opinión Analítica e Interpretación Comercial</div>
+            <div class="analysis-author">POR: ANALISTA COMERCIAL & DE VENTAS (GEMINI)</div>
+            
+            <p style="font-size: 0.95rem; line-height: 1.5; color: #333;">
+                Análisis cualitativo y porcentual basado en la relación de Ventas Totales semanales, Clima en Santa Cruz y la Producción por Categorías (Panadería, Pasteles Individuales, Postres Enteros, Salados y Tortas):
+            </p>
+            
+            <div class="analysis-section-hdr">🌡️ Sensibilidad al Clima (Surazos y Días Fríos)</div>
+            <ul class="analysis-list">
+                <li><b>Categoría más impactada (Salados):</b> Ante caídas bruscas de temperatura (11°C - 13°C), la demanda de salados es la que más se dispara, registrando incrementos de producción de hasta <b>+150% a +200%</b> frente a sus semanas promedio.</li>
+                <li><b>Efecto en Tortas y Repostería:</b> Muestran un crecimiento moderado del <b>+80% al +100%</b> durante frentes fríos, asociado al acompañamiento con bebidas calientes y reuniones en espacio cerrado.</li>
+            </ul>
 
-        <div class="analysis-section-hdr">🎉 Impacto de Festividades sin "Efecto Regalo"</div>
-        <ul class="analysis-list">
-            <li><b>Carnaval:</b> Provoca una caída general de volumen de aprox. <b>-10% a -15%</b> en salón y salados por el desplazamiento de la población fuera de la ciudad.</li>
-            <li><b>Semana Santa y Feriados Religiosos:</b> Mantienen ventas estables reasignando el mix: la producción de <b>Pasteles Individuales y Salados</b> crece cerca de un <b>+25%</b>, impulsada por consumo rápido y reuniones familiares.</li>
-        </ul>
+            <div class="analysis-section-hdr">🎉 Impacto de Festividades sin "Efecto Regalo"</div>
+            <ul class="analysis-list">
+                <li><b>Carnaval:</b> Provoca una caída general de volumen de aprox. <b>-10% a -15%</b> en salón y salados por el desplazamiento de la población fuera de la ciudad.</li>
+                <li><b>Semana Santa y Feriados Religiosos:</b> Mantienen ventas estables reasignando el mix: la producción de <b>Pasteles Individuales y Salados</b> crece cerca de un <b>+25%</b>, impulsada por consumo rápido y reuniones familiares.</li>
+            </ul>
 
-        <div class="analysis-section-hdr">🔍 Análisis de Fondo: Comportamiento Base (Sin Picos Comerciales)</div>
-        <p style="font-size: 0.85rem; color: #7F8C8D; margin-bottom: 0.5rem; font-style: italic;">
-            Descartando las fechas con fuerte "efecto regalo" (Día de la Madre, Padre y Niño), donde la demanda ocurre independientemente del clima:
-        </p>
-        <ul class="analysis-list">
-            <li><b>Salados es la categoría más vulnerable al clima:</b> 100% reactiva. En semanas calurosas (27°C - 32°C), la producción cae hasta un <b>-30%</b> respecto a su media.</li>
-            <li><b>Tortas y Postres Enteros son "Resistentes al Clima":</b> En semanas normales o festivos menores, el volumen de producción varía muy poco (±10%), respondiendo a eventos personales (cumpleaños) más que al clima.</li>
-            <li><b>Pasteles Individuales como amortiguador:</b> Categoría constante todo el año. Ante climas extremos amortigua variaciones con cambios mínimos (5% a 8%).</li>
-        </ul>
-    </div>
-    """
-    st.markdown(analysis_html, unsafe_allow_html=True)
+            <div class="analysis-section-hdr">🔍 Análisis de Fondo: Comportamiento Base (Sin Picos Comerciales)</div>
+            <p style="font-size: 0.85rem; color: #7F8C8D; margin-bottom: 0.5rem; font-style: italic;">
+                Descartando las fechas con fuerte "efecto regalo" (Día de la Madre, Padre y Niño), donde la demanda ocurre independientemente del clima:
+            </p>
+            <ul class="analysis-list">
+                <li><b>Salados es la categoría más vulnerable al clima:</b> 100% reactiva. En semanas calurosas (27°C - 32°C), la producción cae hasta un <b>-30%</b> respecto a su media.</li>
+                <li><b>Tortas y Postres Enteros son "Resistentes al Clima":</b> En semanas normales o festivos menores, el volumen de producción varía muy poco (±10%), respondiendo a eventos personales (cumpleaños) más que al clima.</li>
+                <li><b>Pasteles Individuales como amortiguador:</b> Categoría constante todo el año. Ante climas extremos amortigua variaciones con cambios mínimos (5% a 8%).</li>
+            </ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # 2. SECCIÓN INFERIOR EN 2 COLUMNAS (Métricas + Pronóstico & Calendario)
+    # 2. SECCIÓN INFERIOR EN 2 COLUMNAS
     col_left, col_right = st.columns(2)
 
     with col_left:
-        # Ponderación de datos climatológicos promedio + Pronóstico Próximas 2 Semanas
-        left_card_html = """
-        <div class="sub-card">
-            <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
-            <div class="weather-grid">
-                <div class="weather-item">
-                    <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
-                    <div class="weather-val">21.8 °C</div>
+        # Ponderación de datos climatológicos promedio
+        st.markdown(
+            """
+            <div class="sub-card">
+                <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
+                <div class="weather-grid">
+                    <div class="weather-item">
+                        <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
+                        <div class="weather-val">21.8 °C</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
+                        <div class="weather-val">11.0 °C</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
+                        <div class="weather-val">32.9 °C</div>
+                    </div>
+                    <div class="weather-item">
+                        <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
+                        <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
+                    </div>
                 </div>
-                <div class="weather-item">
-                    <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
-                    <div class="weather-val">11.0 °C</div>
-                </div>
-                <div class="weather-item">
-                    <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
-                    <div class="weather-val">32.9 °C</div>
-                </div>
-                <div class="weather-item">
-                    <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
-                    <div class="weather-val" style="font-size: 1rem; margin-top: 5px;">Despejado / Nublado</div>
-                </div>
+                <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
+                    *Valores consolidados del histórico semanal registrador en base de datos.
+                </p>
             </div>
-            
-            <div style="margin-top: 1.5rem; font-weight: 700; color: #7A1C29; font-size: 1rem;">
-                🔮 Pronóstico Climatológico (Próximas 2 Semanas)
-            </div>
-
-            <div class="forecast-card">
-                <div class="forecast-header">🗓️ Semana 1 (Semana Entrante)</div>
-                <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>28.5 °C</b></div>
-                <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>18.2 °C</b></div>
-                <div class="forecast-detail"><span>Precipitaciones:</span> <b>12 mm (Baja probabilidad)</b></div>
-                <div class="forecast-detail"><span>Estado:</span> <b>Parcialmente Nublado / Caluroso</b></div>
-            </div>
-
-            <div class="forecast-card">
-                <div class="forecast-header">🗓️ Semana 2 (Siguiente Semana)</div>
-                <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>22.1 °C</b></div>
-                <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>13.5 °C</b></div>
-                <div class="forecast-detail"><span>Precipitaciones:</span> <b>45 mm (Ingreso de Surazo)</b></div>
-                <div class="forecast-detail"><span>Estado:</span> <b>Frío / Lluvias Moderadas ❄️</b></div>
-            </div>
-
-            <p style="font-size: 0.78rem; color: #95A5A6; text-align: center; margin-top: 1rem; margin-bottom: 0;">
-                *Valores consolidados del histórico semanal registrado y proyección meteorológica oficial.
-            </p>
-        </div>
-        """
-        st.markdown(left_card_html, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
     with col_right:
         # Calendario de Festividades
@@ -1311,15 +1269,17 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
             ]
         )
 
-        right_card_html = f"""
-        <div class="sub-card">
-            <div class="sub-card-title">📅 Calendario de Festividades & Días Especiales</div>
-            <div class="festivos-container">
-                {festivos_html}
+        st.markdown(
+            f"""
+            <div class="sub-card">
+                <div class="sub-card-title">📅 Calendario de Festividades & Días Especiales</div>
+                <div class="festivos-container">
+                    {festivos_html}
+                </div>
             </div>
-        </div>
-        """
-        st.markdown(right_card_html, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
 # ------------------------------------------
 # MÓDULO 4: GESTIÓN DE TAREAS
@@ -1442,21 +1402,19 @@ elif menu_option == "📝 Gestión de Tareas":
                 if f_entrega and f_entrega != "nan" and f_entrega != "None":
                     date_str += f" | 🏁 Entrega: <b>{f_entrega}</b>"
 
-                rows_html += (
-                    f'<div class="task-row {row_class}">'
-                    f'<div style="display: flex; justify-content: space-between; align-items: flex-start;">'
-                    f'<div class="task-title">{row["TAREA"]}</div>'
-                    f'<div>'
-                    f'<span class="task-badge {badge_class}">{badge_icon} {estado}</span>'
-                    f'<span class="task-badge badge-dept">🏢 {row["Departamento"]}</span>'
-                    f'</div>'
-                    f'</div>'
-                    f'<div class="task-meta">'
-                    f'<div class="task-meta-item">👥 <b>Equipo:</b> {equipo_str}</div>'
-                    f'<div class="task-meta-item" style="margin-left: auto;">{date_str}</div>'
-                    f'</div>'
-                    f'</div>'
-                )
+                rows_html += f"""<div class="task-row {row_class}">
+<div style="display: flex; justify-content: space-between; align-items: flex-start;">
+<div class="task-title">{row['TAREA']}</div>
+<div>
+<span class="task-badge {badge_class}">{badge_icon} {estado}</span>
+<span class="task-badge badge-dept">🏢 {row['Departamento']}</span>
+</div>
+</div>
+<div class="task-meta">
+<div class="task-meta-item">👥 <b>Equipo:</b> {equipo_str}</div>
+<div class="task-meta-item" style="margin-left: auto;">{date_str}</div>
+</div>
+</div>"""
 
             container_html = f'<div class="task-container-card">{rows_html}</div>'
             st.markdown(container_html, unsafe_allow_html=True)
@@ -1512,16 +1470,23 @@ elif menu_option == "📝 Gestión de Tareas":
                 for idx_k, r_name in enumerate(chunk_keys):
                     st_data = resp_stats[r_name]
                     with cols_r[idx_k]:
-                        summary_html = (
-                            f'<div class="resp-summary-card">'
-                            f'<div class="resp-summary-name">👤 {r_name}</div>'
-                            f'<div class="resp-stat-grid">'
-                            f'<div><div style="color: #C0392B;">Pend.</div><div class="resp-stat-num" style="color: #C0392B;">{st_data["Pendientes"]}</div></div>'
-                            f'<div><div style="color: #D68910;">Proceso</div><div class="resp-stat-num" style="color: #D68910;">{st_data["En Proceso"]}</div></div>'
-                            f'<div><div style="color: #1E8449;">Fin.</div><div class="resp-stat-num" style="color: #1E8449;">{st_data["Finalizadas"]}</div></div>'
-                            f'</div>'
-                            f'</div>'
-                        )
+                        summary_html = f"""<div class="resp-summary-card">
+<div class="resp-summary-name">👤 {r_name}</div>
+<div class="resp-stat-grid">
+<div>
+<div style="color: #C0392B;">Pend.</div>
+<div class="resp-stat-num" style="color: #C0392B;">{st_data['Pendientes']}</div>
+</div>
+<div>
+<div style="color: #D68910;">Proceso</div>
+<div class="resp-stat-num" style="color: #D68910;">{st_data['En Proceso']}</div>
+</div>
+<div>
+<div style="color: #1E8449;">Fin.</div>
+<div class="resp-stat-num" style="color: #1E8449;">{st_data['Finalizadas']}</div>
+</div>
+</div>
+</div>"""
                         st.markdown(summary_html, unsafe_allow_html=True)
 
 # ------------------------------------------
