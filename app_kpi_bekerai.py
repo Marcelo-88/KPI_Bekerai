@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 # ==========================================
 # 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS
