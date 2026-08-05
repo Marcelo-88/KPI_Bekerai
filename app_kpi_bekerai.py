@@ -1619,7 +1619,7 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
 
-    # Autenticación dinámica de usuarios
+    # Autenticación de usuario
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
         st.session_state.usuario_actual = None
@@ -1647,16 +1647,20 @@ elif menu_option == "🤖 Asistente IA Comercial":
                         st.success(f"¡Bienvenido/a {st.session_state.usuario_actual}!")
                         st.rerun()
                     else:
-                        st.error("Correo o PIN incorrecto. Revisa los datos de la pestaña 'Usuarios'.")
+                        st.error("Correo o PIN incorrecto.")
         st.stop()
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Lectura y validación de API Key
+    # Lectura de la API Key
     gemini_key = st.secrets.get("GEMINI_API_KEY", "")
     if not gemini_key:
         st.error("⚠️ No se encontró la clave `GEMINI_API_KEY` en los Secrets de Streamlit.")
         st.stop()
+
+    # Configuración global del SDK oficial
+    import google.generativeai as genai
+    genai.configure(api_key=str(gemini_key).strip())
 
     # Contexto de datos en tiempo real
     kpi_summary_str = "No hay datos de KPI disponibles."
@@ -1692,7 +1696,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Procesamiento del prompt
+    # Procesamiento de la consulta
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -1703,22 +1707,16 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 last_error = ""
 
-                # Inicialización del cliente oficial
-                try:
-                    ai_client = genai.Client(api_key=str(gemini_key).strip())
-                except Exception as e_init:
-                    st.error(f"Error al inicializar cliente Gemini: {e_init}")
-                    st.stop()
+                # Lista de modelos compatibles de mayor a menor preferencia
+                candidate_models = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-pro"]
 
-                # Lista con los IDs de modelos soportados
-                candidate_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
-
-                for model_id in candidate_models:
+                for model_name in candidate_models:
                     try:
-                        res = ai_client.models.generate_content(
-                            model=model_id,
-                            contents=f"{system_prompt}\n\nPregunta del usuario: {prompt}"
+                        model = genai.GenerativeModel(
+                            model_name=model_name,
+                            system_instruction=system_prompt
                         )
+                        res = model.generate_content(prompt)
                         if res and res.text:
                             response_text = res.text
                             break
@@ -1727,7 +1725,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
                         continue
 
                 if not response_text:
-                    response_text = f"❌ **Error al conectar con la API de Gemini:**\n\n`{last_error}`\n\n*Verifica que tu clave en Secrets esté activa y tenga permisos habilitados en Google AI Studio.*"
+                    response_text = f"❌ **Error al conectar con la API de Gemini:**\n\n`{last_error}`"
 
                 st.markdown(response_text)
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
