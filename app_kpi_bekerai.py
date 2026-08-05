@@ -1191,3 +1191,12 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 else:
                     detalles = "\n".join(error_log)
                     st.error(f"❌ No se pudo obtener respuesta de la IA.\n\n**Detalles:**\n{detalles}")
+
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
