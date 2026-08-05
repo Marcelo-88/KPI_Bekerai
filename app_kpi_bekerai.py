@@ -1,3 +1,4 @@
+import io
 import re
 import textwrap
 from datetime import datetime, timedelta
@@ -5,8 +6,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import requests
 import streamlit as st
-from google import genai
 
 # ==========================================
 # 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS
@@ -168,7 +169,7 @@ FRIDOLIN_CSS = """
 st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CARGA Y PARSEO DE DATOS
+# 2. CARGA Y PARSEO DE DATOS SEGURO
 # ==========================================
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
@@ -224,26 +225,32 @@ def format_kpi_value(val, medible_name):
         return f"{val:,.2f}"
 
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=300)
 def cargar_usuarios():
     url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=csv&gid={GID_USUARIOS}"
     try:
-        df_user = pd.read_csv(url)
-        df_user.columns = df_user.columns.str.strip().str.upper()
-        df_user['PIN'] = df_user['PIN'].astype(str).str.replace('.0', '', regex=False).str.strip()
-        df_user['EMAIL'] = df_user['EMAIL'].astype(str).str.strip().str.lower()
-        return df_user
+        resp = requests.get(url, timeout=10)
+        if resp.status_code == 200:
+            df_user = pd.read_csv(io.StringIO(resp.text))
+            df_user.columns = df_user.columns.str.strip().str.upper()
+            df_user['PIN'] = df_user['PIN'].astype(str).str.replace('.0', '', regex=False).str.strip()
+            df_user['EMAIL'] = df_user['EMAIL'].astype(str).str.strip().str.lower()
+            return df_user
+        return pd.DataFrame()
     except Exception:
         return pd.DataFrame()
 
 
 @st.cache_data(ttl=60)
 def load_data():
-    sheets = pd.read_excel(
-        EXCEL_URL, 
-        sheet_name=["KPI", "Tareas", "Ventas_Clima"], 
-        header=None
-    )
+    try:
+        response = requests.get(EXCEL_URL, timeout=15)
+        response.raise_for_status()
+        excel_file = io.BytesIO(response.content)
+        sheets = pd.read_excel(excel_file, sheet_name=["KPI", "Tareas", "Ventas_Clima"], header=None, engine="openpyxl")
+    except Exception as err:
+        st.error(f"⚠️ Error al conectar con Google Sheets: {err}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
     # PARSER PESTAÑA KPI
     df_kpi_raw = sheets.get("KPI", pd.DataFrame())
@@ -446,11 +453,7 @@ if st.sidebar.button("🔄 Actualizar Datos Ahora", use_container_width=True):
 
 st.sidebar.link_button("🌐 Abrir Sheet en Google Drive", ONLINE_SHEET_URL, use_container_width=True)
 
-try:
-    df_kpis, df_tasks, df_vc = load_data()
-except Exception as e:
-    st.error(f"⚠️ Error al conectar con Google Sheets: {e}")
-    st.stop()
+df_kpis, df_tasks, df_vc = load_data()
 
 # Header Superior
 st.markdown(
@@ -1105,18 +1108,25 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
+    # ACCESO SEGURO A ST.SECRETS
+    gemini_key = ""
     try:
-        from google import genai
-        gemini_key = st.secrets.get("GEMINI_API_KEY", "").strip().replace("\n", "").replace("\r", "")
-        if not gemini_key:
-            st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
-            st.stop()
-        client = genai.Client(api_key=gemini_key)
-    except Exception as err_import:
-        st.error(f"⚠️ Ocurrió un problema al inicializar el servicio de Gemini IA: {err_import}")
+        if "GEMINI_API_KEY" in st.secrets:
+            gemini_key = str(st.secrets["GEMINI_API_KEY"]).strip().replace("\n", "").replace("\r", "")
+    except Exception:
+        gemini_key = ""
+
+    if not gemini_key:
+        st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit Cloud.")
         st.stop()
 
-    # OPTIMIZACIÓN DE TOKENS: Formato ligero comprimido para context window
+    try:
+        from google import genai
+        client = genai.Client(api_key=gemini_key)
+    except Exception as err_init:
+        st.error(f"⚠️ Error al inicializar el SDK de Gemini: {err_init}")
+        st.stop()
+
     kpi_summary_str = "No hay datos de KPI disponibles."
     if not df_kpis.empty:
         df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(50)
@@ -1157,7 +1167,6 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 error_log = []
                 
-                # CASCADA DE MODELOS
                 modelos_candidatos = [
                     "models/gemini-2.0-flash",
                     "models/gemini-1.5-flash",
@@ -1181,4 +1190,4 @@ elif menu_option == "🤖 Asistente IA Comercial":
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
                 else:
                     detalles = "\n".join(error_log)
-                    st.error(f"❌ No se pudo obtener respuesta de la IA.\n\n**Detalles del error por modelo:**\n{detalles}")
+                    st.error(f"❌ No se pudo obtener respuesta de la IA.\n\n**Detalles:**\n{detalles}")
