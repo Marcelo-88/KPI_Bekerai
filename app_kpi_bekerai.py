@@ -1251,13 +1251,11 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     else:
         st.markdown(analysis_card_html, unsafe_allow_html=True)
 
-    # CÁLCULO DINÁMICO DE FECHAS DE LA SEMANA ACTUAL Y SIGUIENTE (Agosto 2026)
-    today = datetime(2026, 8, 4)
-    # Lunes de la semana actual
+    # CÁLCULO DINÁMICO DE FECHAS (Semana de Lunes a Domingo)
+    today = datetime.now()
     monday_w1 = today - timedelta(days=today.weekday())
     sunday_w1 = monday_w1 + timedelta(days=6)
     
-    # Lunes y Domingo de la siguiente semana
     monday_w2 = monday_w1 + timedelta(days=7)
     sunday_w2 = sunday_w1 + timedelta(days=7)
     
@@ -1510,19 +1508,21 @@ elif menu_option == "📝 Gestión de Tareas":
         for r in all_resps_list:
             if not r or r == "None":
                 continue
-            m1 = df_tasks["Responsable Principal"] == r
+            
+            # CORRECCIÓN DE UNIFORMIDAD: Usar el DataFrame filtrado (df_filtered)
+            m1 = df_filtered["Responsable Principal"] == r
             m2 = (
-                df_tasks["Responsable 2"] == r
-                if "Responsable 2" in df_tasks.columns
+                df_filtered["Responsable 2"] == r
+                if "Responsable 2" in df_filtered.columns
                 else False
             )
             m3 = (
-                df_tasks["Responsable 3"] == r
-                if "Responsable 3" in df_tasks.columns
+                df_filtered["Responsable 3"] == r
+                if "Responsable 3" in df_filtered.columns
                 else False
             )
 
-            sub_resp = df_tasks[m1 | m2 | m3]
+            sub_resp = df_filtered[m1 | m2 | m3]
 
             pendientes = sum(
                 sub_resp["Estado"].str.lower().str.contains("pend", na=False)
@@ -1674,7 +1674,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     system_prompt = f"""
     Eres el Consultor IA Comercial y Financiero Senior de la cadena de pastelerías Fridolin (Santa Cruz, Bolivia).
-    Tu objetivo es responder a las preguntas del equipo gerencial basándote estrictamente en los datos actuales de la empresa.
+    Tu objetivo es responder a las preguntas del equipo gerencial basándote strictly en los datos actuales de la empresa.
 
     === RESUMEN RECIENTE DE KPIS ===
     {kpi_summary_str}
@@ -1740,7 +1740,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
                             success = True
                             break
                     except Exception as ex:
-                        continue  # Intenta el siguiente modelo silenciosamente en caso de error 400, 404 o 429
+                        continue  # Intenta el siguiente modelo silenciosamente en caso de error
 
                 if not success or not response_text:
                     response_text = "❌ Lo sentimos, no se pudo procesar la solicitud con Gemini en este momento. Por favor, reintenta más tarde o verifica la vigencia de tu API Key."
