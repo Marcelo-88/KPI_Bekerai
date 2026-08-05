@@ -1652,15 +1652,11 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Lectura de la API Key
+    # Lectura de la API Key desde Secrets
     gemini_key = st.secrets.get("GEMINI_API_KEY", "")
     if not gemini_key:
         st.error("⚠️ No se encontró la clave `GEMINI_API_KEY` en los Secrets de Streamlit.")
         st.stop()
-
-    # Configuración global del SDK oficial
-    import google.generativeai as genai
-    genai.configure(api_key=str(gemini_key).strip())
 
     # Contexto de datos en tiempo real
     kpi_summary_str = "No hay datos de KPI disponibles."
@@ -1707,22 +1703,37 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 last_error = ""
 
-                # Lista de modelos compatibles de mayor a menor preferencia
-                candidate_models = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-pro"]
+                # Inicialización usando la librería cliente oficial con API v1
+                try:
+                    from google import genai
+                    ai_client = genai.Client(api_key=str(gemini_key).strip())
 
-                for model_name in candidate_models:
+                    # Se prueban los modelos soportados en v1
+                    candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
+
+                    for m_id in candidate_models:
+                        try:
+                            res = ai_client.models.generate_content(
+                                model=m_id,
+                                contents=f"{system_prompt}\n\nPregunta del usuario: {prompt}"
+                            )
+                            if res and res.text:
+                                response_text = res.text
+                                break
+                        except Exception as e_m:
+                            last_error = str(e_m)
+                            continue
+
+                except Exception as e_import:
+                    # Fallback si no está instalado google-genai
                     try:
-                        model = genai.GenerativeModel(
-                            model_name=model_name,
-                            system_instruction=system_prompt
-                        )
-                        res = model.generate_content(prompt)
-                        if res and res.text:
-                            response_text = res.text
-                            break
-                    except Exception as e_gen:
-                        last_error = str(e_gen)
-                        continue
+                        import google.generativeai as legacy_genai
+                        legacy_genai.configure(api_key=str(gemini_key).strip())
+                        model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+                        res = model.generate_content(f"{system_prompt}\n\nPregunta: {prompt}")
+                        response_text = res.text
+                    except Exception as e_legacy:
+                        last_error = f"Error en fallback legacy: {e_legacy}"
 
                 if not response_text:
                     response_text = f"❌ **Error al conectar con la API de Gemini:**\n\n`{last_error}`"
