@@ -1509,7 +1509,6 @@ elif menu_option == "📝 Gestión de Tareas":
             if not r or r == "None":
                 continue
             
-            # CORRECCIÓN DE UNIFORMIDAD: Usar el DataFrame filtrado (df_filtered)
             m1 = df_filtered["Responsable Principal"] == r
             m2 = (
                 df_filtered["Responsable 2"] == r
@@ -1620,13 +1619,13 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
 
-    # 1. AUTENTICACIÓN DINÁMICA DE USUARIOS POR EMAIL & PIN DESDE GOOGLE DRIVE
+    # Autenticación dinámica de usuarios por Email & PIN
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
         st.session_state.usuario_actual = None
 
     if not st.session_state.autenticado:
-        st.info("🔐 Ingresa tus credenciales autorizadas (registradas en la pestaña 'Usuarios') para acceder al Asistente IA.")
+        st.info("🔐 Ingresa tus credenciales autorizadas para acceder al Asistente IA.")
         df_usuarios = cargar_usuarios()
 
         with st.form("login_ia_form"):
@@ -1651,10 +1650,9 @@ elif menu_option == "🤖 Asistente IA Comercial":
                         st.error("Correo o PIN incorrecto. Revisa los datos de la pestaña 'Usuarios'.")
         st.stop()
 
-    # Usuario ya autenticado
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # 2. OBTENER Y CONFIGURAR API KEY DE GEMINI
+    # Configuración API Key de Gemini
     gemini_key = st.secrets.get("GEMINI_API_KEY", "")
     if not gemini_key:
         st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
@@ -1662,7 +1660,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     genai.configure(api_key=gemini_key)
 
-    # 3. PREPARACIÓN DEL CONTEXTO DE DATOS EN TIEMPO REAL
+    # Contexto de datos en tiempo real
     kpi_summary_str = "No hay datos de KPI disponibles."
     if not df_kpis.empty:
         df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(100)
@@ -1674,7 +1672,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     system_prompt = f"""
     Eres el Consultor IA Comercial y Financiero Senior de la cadena de pastelerías Fridolin (Santa Cruz, Bolivia).
-    Tu objetivo es responder a las preguntas del equipo gerencial basándote strictly en los datos actuales de la empresa.
+    Tu objetivo es responder a las preguntas del equipo gerencial basándote estrictamente en los datos actuales de la empresa.
 
     === RESUMEN RECIENTE DE KPIS ===
     {kpi_summary_str}
@@ -1688,7 +1686,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
     3. Si la consulta involucra datos numéricos, especifica los valores o porcentajes según corresponda.
     """
 
-    # 4. MEMORIA DE CHAT DE SESIÓN
+    # Memoria de chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -1696,7 +1694,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # 5. GENERACIÓN CON CASCADA DE FALLBACK SILENCIOSA Y FILTRADO ACTIVO DE MODELOS DE TEXTO
+    # Procesamiento con cascada de fallback activa para modelos de Gemini
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -1706,7 +1704,6 @@ elif menu_option == "🤖 Asistente IA Comercial":
             with st.spinner("Analizando datos comerciales con Gemini IA..."):
                 response_text = ""
                 
-                # Modelos de texto probados en orden de prioridad
                 candidate_models = [
                     "models/gemini-2.0-flash",
                     "models/gemini-1.5-flash",
@@ -1714,19 +1711,16 @@ elif menu_option == "🤖 Asistente IA Comercial":
                     "gemini-1.5-flash"
                 ]
 
-                # Filtrado activo: Consultar los modelos soportados realmente por la API KEY
                 try:
                     available_models = [
                         m.name for m in genai.list_models()
                         if "generateContent" in m.supported_generation_methods
                         and not any(tag in m.name.lower() for tag in ["tts", "audio", "embed"])
                     ]
-                    # Priorizar candidato que coincida con la lista del servidor
                     candidate_models = [m for m in candidate_models if m in available_models] + candidate_models
                 except Exception:
-                    pass  # Si el list_models falla, se continúa con la lista fallback estándar
+                    pass
 
-                # Ejecutar la cascada de fallback
                 success = False
                 for model_name in candidate_models:
                     try:
@@ -1739,8 +1733,8 @@ elif menu_option == "🤖 Asistente IA Comercial":
                             response_text = res.text
                             success = True
                             break
-                    except Exception as ex:
-                        continue  # Intenta el siguiente modelo silenciosamente en caso de error
+                    except Exception:
+                        continue
 
                 if not success or not response_text:
                     response_text = "❌ Lo sentimos, no se pudo procesar la solicitud con Gemini en este momento. Por favor, reintenta más tarde o verifica la vigencia de tu API Key."
