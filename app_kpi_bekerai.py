@@ -19,75 +19,39 @@ st.set_page_config(
 )
 
 PASTEL_COLORS = [
-    "#C0392B",
-    "#2980B9",
-    "#27AE60",
-    "#D35400",
-    "#8E44AD",
-    "#16A085",
-    "#F39C12",
-    "#E74C3C",
-    "#34495E",
-    "#D4AC0D",
+    "#C0392B", "#2980B9", "#27AE60", "#D35400", "#8E44AD",
+    "#16A085", "#F39C12", "#E74C3C", "#34495E", "#D4AC0D",
 ]
 
 MEDIBLE_TYPES = {
-    "Venta Total Bolivianos": "Bs",
-    "Bajas (Precio vta)": "Bs",
-    "Inversion RRSS": "Bs",
-    "Valor Enviado FBCA": "Bs",
-    "Compras Proveedores MP": "Bs",
-    "Valor Enviado Bodega": "Bs",
-    "Pago Proveedores Marketing": "Bs",
-    "Balance Efectivo": "Bs",
-    "Pagos Proveedores MP": "Bs",
-    "Total C x P": "Bs",
-    "Total C x P Proveedores MP": "Bs",
-    "Ticket Promedio": "Bs",
-    "Pagos menos Compras": "Bs",
-    "Vistas x 1 Bs": "Bs",
-    "Bajas % vs Vta": "%",
-    "Gasto Mktg vs Ventas": "%",
-    "Valor Enviado Bodega / Vtas": "%",
-    "Valor Enviado FBCA / Vtas": "%",
-    "Valor enviado TOTAL / Vtas": "%",
-    "Alcance IG&Fb + Reprd. Vistas TikTok": "Unidad",
-    "Facturas Emitidas": "Unidad",
-    "Tortas vendidas": "Unidad",
-    "Bajas": "Unidad",
-    "Ventas": "Unidad",
-    "Envio": "Unidad",
-    "Produccion": "Unidad",
-    "Clientes registrados": "Unidad",
-    "Puntaje Promedio Checklist Suc": "Unidad",
+    "Venta Total Bolivianos": "Bs", "Bajas (Precio vta)": "Bs", "Inversion RRSS": "Bs",
+    "Valor Enviado FBCA": "Bs", "Compras Proveedores MP": "Bs", "Valor Enviado Bodega": "Bs",
+    "Pago Proveedores Marketing": "Bs", "Balance Efectivo": "Bs", "Pagos Proveedores MP": "Bs",
+    "Total C x P": "Bs", "Total C x P Proveedores MP": "Bs", "Ticket Promedio": "Bs",
+    "Pagos menos Compras": "Bs", "Vistas x 1 Bs": "Bs", "Bajas % vs Vta": "%",
+    "Gasto Mktg vs Ventas": "%", "Valor Enviado Bodega / Vtas": "%", "Valor Enviado FBCA / Vtas": "%",
+    "Valor enviado TOTAL / Vtas": "%", "Alcance IG&Fb + Reprd. Vistas TikTok": "Unidad",
+    "Facturas Emitidas": "Unidad", "Tortas vendidas": "Unidad", "Bajas": "Unidad",
+    "Ventas": "Unidad", "Envio": "Unidad", "Produccion": "Unidad",
+    "Clientes registrados": "Unidad", "Puntaje Promedio Checklist Suc": "Unidad",
     "Sucursales Visitadas promedio": "Unidad",
 }
 
 KPIS_INVERTIDOS = [
-    "BAJAS % VS VTA",
-    "TOTAL C X P",
-    "TOTAL C X P PROVEEDORES MP",
-    "VALOR ENVIADO TOTAL / VTAS",
-    "VALOR ENVIADO BODEGA / VTAS",
-    "VALOR ENVIADO FBCA / VTAS",
-    "BAJAS",
-    "BAJAS (PRECIO VTA)",
+    "BAJAS % VS VTA", "TOTAL C X P", "TOTAL C X P PROVEEDORES MP",
+    "VALOR ENVIADO TOTAL / VTAS", "VALOR ENVIADO BODEGA / VTAS",
+    "VALOR ENVIADO FBCA / VTAS", "BAJAS", "BAJAS (PRECIO VTA)",
 ]
 
 KPIS_NEUTROS = [
-    "VALOR ENVIADO FBCA",
-    "VALOR ENVIADO BODEGA",
-    "COMPRAS PROVEEDORES MP",
+    "VALOR ENVIADO FBCA", "VALOR ENVIADO BODEGA", "COMPRAS PROVEEDORES MP",
 ]
 
 FRIDOLIN_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    
+    html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
     .stApp { background-color: #F7F4EE; color: #2D2B2A; }
     .main-header {
         background-color: #7A1C29; padding: 1.2rem; border-radius: 14px;
@@ -99,16 +63,11 @@ FRIDOLIN_CSS = """
     section[data-testid="stSidebar"] { background-color: #EFECE4 !important; border-right: 1px solid #DFD9CE; }
     
     .kpi-card-base {
-        border-radius: 12px;
-        padding: 0.7rem 0.85rem; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04); margin-bottom: 0.75rem;
-        min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;
-        border: 1px solid #E6E1D7;
-        transition: all 0.2s ease;
+        border-radius: 12px; padding: 0.7rem 0.85rem; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+        margin-bottom: 0.75rem; min-height: 160px; display: flex; flex-direction: column;
+        justify-content: space-between; border: 1px solid #E6E1D7; transition: all 0.2s ease;
     }
-
-    .kpi-bg-drop {
-        background-color: #7A1C29 !important; border-color: #58131D !important; color: #FFFFFF !important;
-    }
+    .kpi-bg-drop { background-color: #7A1C29 !important; border-color: #58131D !important; color: #FFFFFF !important; }
     .kpi-bg-drop .kpi-card-header { color: #FADBD8 !important; }
     .kpi-bg-drop .kpi-card-val { color: #FFFFFF !important; }
     .kpi-bg-drop .kpi-resp-tag { color: #F5CBA7 !important; }
@@ -120,9 +79,7 @@ FRIDOLIN_CSS = """
     .kpi-bg-drop .kpi-breakdown-num { color: #FFFFFF !important; }
     .kpi-bg-drop .kpi-card-footer { border-top-color: rgba(255, 255, 255, 0.2) !important; }
 
-    .kpi-bg-up {
-        background-color: #E1FFC9 !important; border-color: #C2E8A3 !important; color: #1E4620 !important;
-    }
+    .kpi-bg-up { background-color: #E1FFC9 !important; border-color: #C2E8A3 !important; color: #1E4620 !important; }
     .kpi-bg-up .kpi-card-header { color: #2C5E2E !important; }
     .kpi-bg-up .kpi-card-val { color: #1E4620 !important; }
     .kpi-bg-up .kpi-resp-tag { color: #4A7A4C !important; }
@@ -133,9 +90,7 @@ FRIDOLIN_CSS = """
     .kpi-bg-up .kpi-breakdown-cat { color: #335C35 !important; }
     .kpi-bg-up .kpi-breakdown-num { color: #1E4620 !important; }
 
-    .kpi-bg-neutral {
-        background-color: #EDE7D9 !important; border-color: #D3CBBE !important; color: #2D2B2A !important;
-    }
+    .kpi-bg-neutral { background-color: #EDE7D9 !important; border-color: #D3CBBE !important; color: #2D2B2A !important; }
     .kpi-bg-neutral .kpi-card-header { color: #4A4644 !important; }
     .kpi-bg-neutral .kpi-card-val { color: #7A1C29 !important; }
     .kpi-bg-neutral .kpi-resp-tag { color: #8A6D3B !important; }
@@ -145,9 +100,8 @@ FRIDOLIN_CSS = """
     .kpi-card-val { font-size: 1.55rem; font-weight: 800; margin: 0.1rem 0 0.3rem 0; font-variant-numeric: tabular-nums; line-height: 1.1; }
     
     .kpi-breakdown-box {
-        border-radius: 6px; padding: 0.35rem 0.5rem;
-        margin: 0.3rem 0 0.4rem 0; font-size: 0.74rem; display: flex; flex-direction: column; gap: 0.15rem;
-        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 6px; padding: 0.35rem 0.5rem; margin: 0.3rem 0 0.4rem 0;
+        font-size: 0.74rem; display: flex; flex-direction: column; gap: 0.15rem; border: 1px solid rgba(0,0,0,0.08);
     }
     .kpi-breakdown-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(0,0,0,0.08); padding-bottom: 1px; }
     .kpi-breakdown-row:last-child { border-bottom: none; padding-bottom: 0; }
@@ -163,141 +117,34 @@ FRIDOLIN_CSS = """
     .kpi-resp-tag { font-size: 0.73rem; font-weight: 600; margin-bottom: 0.1rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
 
-    /* ESTILOS DE TARJETA ANALÍTICA */
     .analysis-card {
-        background: #FFFFFF;
-        border-radius: 16px;
-        padding: 1.8rem;
-        border: 1px solid #EAE4D9;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.03);
-        margin-bottom: 1.8rem;
+        background: #FFFFFF; border-radius: 16px; padding: 1.8rem;
+        border: 1px solid #EAE4D9; box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 1.8rem;
     }
-    .analysis-title {
-        color: #7A1C29;
-        font-size: 1.35rem;
-        font-weight: 800;
-        margin-bottom: 0.2rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .analysis-author {
-        color: #8C7B6B;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 1.2rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .analysis-section-hdr {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #2D2B2A;
-        margin-top: 1.2rem;
-        margin-bottom: 0.6rem;
-        border-left: 4px solid #7A1C29;
-        padding-left: 8px;
-    }
-    .analysis-list {
-        margin: 0;
-        padding-left: 1.2rem;
-        font-size: 0.93rem;
-        line-height: 1.6;
-        color: #4A4644;
-    }
-    .analysis-list li {
-        margin-bottom: 0.5rem;
-    }
+    .analysis-title { color: #7A1C29; font-size: 1.35rem; font-weight: 800; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 8px; }
+    .analysis-author { color: #8C7B6B; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .analysis-section-hdr { font-size: 1.05rem; font-weight: 700; color: #2D2B2A; margin-top: 1.2rem; margin-bottom: 0.6rem; border-left: 4px solid #7A1C29; padding-left: 8px; }
+    .analysis-list { margin: 0; padding-left: 1.2rem; font-size: 0.93rem; line-height: 1.6; color: #4A4644; }
+    .analysis-list li { margin-bottom: 0.5rem; }
 
-    /* ESTILOS DE MÓDULOS INFERIORES EN COLUMNAS */
-    .sub-card {
-        background: #FFFFFF;
-        border-radius: 14px;
-        padding: 1.3rem;
-        border: 1px solid #EAE4D9;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-        height: 100%;
-    }
-    .sub-card-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #7A1C29;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .weather-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-    .weather-item {
-        background: #FDFBF7;
-        border: 1px solid #F0EAE1;
-        border-radius: 10px;
-        padding: 0.8rem;
-        text-align: center;
-    }
-    .weather-val {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: #7A1C29;
-        margin-top: 2px;
-    }
-    .weather-lbl {
-        font-size: 0.78rem;
-        color: #7F8C8D;
-        font-weight: 600;
-    }
-    .festivos-container {
-        max-height: 380px;
-        overflow-y: auto;
-        padding-right: 5px;
-    }
-    .festivo-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.6rem 0.8rem;
-        border-bottom: 1px solid #F3EFEA;
-        font-size: 0.85rem;
-    }
+    .sub-card { background: #FFFFFF; border-radius: 14px; padding: 1.3rem; border: 1px solid #EAE4D9; box-shadow: 0 4px 12px rgba(0,0,0,0.02); height: 100%; }
+    .sub-card-title { font-size: 1.1rem; font-weight: 700; color: #7A1C29; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+    .weather-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .weather-item { background: #FDFBF7; border: 1px solid #F0EAE1; border-radius: 10px; padding: 0.8rem; text-align: center; }
+    .weather-val { font-size: 1.3rem; font-weight: 800; color: #7A1C29; margin-top: 2px; }
+    .weather-lbl { font-size: 0.78rem; color: #7F8C8D; font-weight: 600; }
+    .festivos-container { max-height: 380px; overflow-y: auto; padding-right: 5px; }
+    .festivo-row { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.8rem; border-bottom: 1px solid #F3EFEA; font-size: 0.85rem; }
     .festivo-row:last-child { border-bottom: none; }
     .festivo-name { font-weight: 600; color: #2D2B2A; }
     .festivo-date { font-weight: 700; color: #D35400; background: #FDEBD0; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem; }
 
-    .forecast-card {
-        background: #FDFBF7;
-        border: 1px solid #EAE4D9;
-        border-radius: 10px;
-        padding: 0.8rem;
-        margin-top: 10px;
-    }
-    .forecast-header {
-        font-weight: 700;
-        color: #7A1C29;
-        font-size: 0.85rem;
-        margin-bottom: 0.4rem;
-        border-bottom: 1px dashed #E2DCD2;
-        padding-bottom: 0.2rem;
-    }
-    .forecast-detail {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        color: #4A4644;
-        margin-bottom: 0.2rem;
-    }
+    .forecast-card { background: #FDFBF7; border: 1px solid #EAE4D9; border-radius: 10px; padding: 0.8rem; margin-top: 10px; }
+    .forecast-header { font-weight: 700; color: #7A1C29; font-size: 0.85rem; margin-bottom: 0.4rem; border-bottom: 1px dashed #E2DCD2; padding-bottom: 0.2rem; }
+    .forecast-detail { display: flex; justify-content: space-between; font-size: 0.8rem; color: #4A4644; margin-bottom: 0.2rem; }
 
-    .task-container-card {
-        background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 16px;
-        padding: 1rem 1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 2rem;
-    }
-    .task-row {
-        padding: 1rem 0.5rem; border-bottom: 1px solid #F0ECE3; border-left: 5px solid transparent;
-        border-radius: 4px; margin-bottom: 0.2rem;
-    }
+    .task-container-card { background-color: #FFFFFF; border: 1px solid #E2DCD2; border-radius: 16px; padding: 1rem 1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 2rem; }
+    .task-row { padding: 1rem 0.5rem; border-bottom: 1px solid #F0ECE3; border-left: 5px solid transparent; border-radius: 4px; margin-bottom: 0.2rem; }
     .task-row-pendiente { border-left-color: #E74C3C; }
     .task-row-proceso { border-left-color: #F39C12; }
     .task-row-finalizado { border-left-color: #27AE60; }
@@ -312,10 +159,7 @@ FRIDOLIN_CSS = """
     .task-meta { font-size: 0.83rem; color: #5D6D7E; margin-top: 0.4rem; padding-left: 0.4rem; display: flex; flex-wrap: wrap; gap: 12px; }
     .task-meta-item { display: flex; align-items: center; gap: 4px; }
     
-    .resp-summary-card {
-        background-color: #FFFFFF; border: 1px solid #E5E0D8; border-radius: 12px;
-        padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 0.8rem;
-    }
+    .resp-summary-card { background-color: #FFFFFF; border: 1px solid #E5E0D8; border-radius: 12px; padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); margin-bottom: 0.8rem; }
     .resp-summary-name { font-weight: 700; font-size: 1rem; color: #7A1C29; margin-bottom: 0.6rem; border-bottom: 1px solid #F0ECE3; padding-bottom: 0.3rem; }
     .resp-stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 0.8rem; }
     .resp-stat-num { font-weight: 800; font-size: 1.1rem; }
@@ -336,10 +180,7 @@ def parse_custom_number(val):
     if pd.isna(val) or val == "" or str(val).strip() == "":
         return None
     val_str = str(val).strip()
-    if any(
-        err in val_str
-        for err in ["#¡DIV/0!", "#DIV/0!", "#N/A", "#REF!", "#VALUE!"]
-    ):
+    if any(err in val_str for err in ["#¡DIV/0!", "#DIV/0!", "#N/A", "#REF!", "#VALUE!"]):
         return None
 
     cleaned = re.sub(r"[^0-9,\.\-]", "", val_str)
@@ -410,40 +251,22 @@ def load_data():
         header_idx = None
         for idx, row in df_kpi_raw.iterrows():
             row_vals = [str(val).strip() for val in row.values]
-            if any(
-                h in row_vals
-                for h in ["Medibles", "Medible", "Quien", "Responsable"]
-            ):
+            if any(h in row_vals for h in ["Medibles", "Medible", "Quien", "Responsable"]):
                 header_idx = idx
                 break
 
         if header_idx is not None:
             df_kpi_clean = df_kpi_raw.iloc[header_idx + 1 :].copy()
-            df_kpi_clean.columns = [
-                str(c).strip() for c in df_kpi_raw.iloc[header_idx].values
-            ]
+            df_kpi_clean.columns = [str(c).strip() for c in df_kpi_raw.iloc[header_idx].values]
             df_kpi_clean = df_kpi_clean.dropna(how="all")
 
             id_cols = [
-                c
-                for c in df_kpi_clean.columns
-                if c
-                in [
-                    "Quien",
-                    "Responsable",
-                    "Departamento",
-                    "Medibles",
-                    "Medible",
-                    "Categoria",
-                    "Categoría",
-                ]
+                c for c in df_kpi_clean.columns
+                if c in ["Quien", "Responsable", "Departamento", "Medibles", "Medible", "Categoria", "Categoría"]
             ]
             val_cols = [
-                c
-                for c in df_kpi_clean.columns
-                if c not in id_cols
-                and not str(c).startswith("Unnamed")
-                and str(c) != "nan"
+                c for c in df_kpi_clean.columns
+                if c not in id_cols and not str(c).startswith("Unnamed") and str(c) != "nan"
             ]
 
             df_kpi_long = pd.melt(
@@ -454,51 +277,23 @@ def load_data():
                 value_name="Valor_Raw",
             )
 
-            df_kpi_long["Valor"] = df_kpi_long["Valor_Raw"].apply(
-                parse_custom_number
-            )
-            df_kpi_long.rename(
-                columns={"Quien": "Responsable", "Medibles": "Medible"},
-                inplace=True,
-            )
+            df_kpi_long["Valor"] = df_kpi_long["Valor_Raw"].apply(parse_custom_number)
+            df_kpi_long.rename(columns={"Quien": "Responsable", "Medibles": "Medible"}, inplace=True)
 
             if "Categoria" in df_kpi_long.columns:
-                df_kpi_long.rename(
-                    columns={"Categoria": "Categoria_Clean"}, inplace=True
-                )
+                df_kpi_long.rename(columns={"Categoria": "Categoria_Clean"}, inplace=True)
             elif "Categoría" in df_kpi_long.columns:
-                df_kpi_long.rename(
-                    columns={"Categoría": "Categoria_Clean"}, inplace=True
-                )
+                df_kpi_long.rename(columns={"Categoría": "Categoria_Clean"}, inplace=True)
             else:
                 df_kpi_long["Categoria_Clean"] = None
 
-            df_kpi_long = df_kpi_long[
-                df_kpi_long["Medible"].notna()
-                & (df_kpi_long["Medible"] != "nan")
-            ]
-            df_kpi_long["Medible"] = (
-                df_kpi_long["Medible"].astype(str).str.strip()
-            )
-            df_kpi_long["Departamento"] = (
-                df_kpi_long["Departamento"]
-                .fillna("Sin Depto")
-                .astype(str)
-                .str.strip()
-            )
-            df_kpi_long["Categoria_Clean"] = (
-                df_kpi_long["Categoria_Clean"]
-                .fillna("")
-                .astype(str)
-                .str.strip()
-            )
+            df_kpi_long = df_kpi_long[df_kpi_long["Medible"].notna() & (df_kpi_long["Medible"] != "nan")]
+            df_kpi_long["Medible"] = df_kpi_long["Medible"].astype(str).str.strip()
+            df_kpi_long["Departamento"] = df_kpi_long["Departamento"].fillna("Sin Depto").astype(str).str.strip()
+            df_kpi_long["Categoria_Clean"] = df_kpi_long["Categoria_Clean"].fillna("").astype(str).str.strip()
 
             df_kpi_long["Medible_Full"] = df_kpi_long.apply(
-                lambda r: (
-                    f"{r['Medible']} {r['Categoria_Clean']}".strip()
-                    if r["Categoria_Clean"]
-                    else r["Medible"]
-                ),
+                lambda r: f"{r['Medible']} {r['Categoria_Clean']}".strip() if r["Categoria_Clean"] else r["Medible"],
                 axis=1,
             )
         else:
@@ -512,42 +307,20 @@ def load_data():
         h_idx_t = None
         for idx, row in df_tareas_raw.iterrows():
             row_vals = [str(val).strip() for val in row.values]
-            if any(
-                h in row_vals
-                for h in ["TAREA", "Tarea", "Responsable Principal", "Estado"]
-            ):
+            if any(h in row_vals for h in ["TAREA", "Tarea", "Responsable Principal", "Estado"]):
                 h_idx_t = idx
                 break
 
         if h_idx_t is not None:
             df_tasks = df_tareas_raw.iloc[h_idx_t + 1 :].copy()
-            df_tasks.columns = [
-                str(c).strip() for c in df_tareas_raw.iloc[h_idx_t].values
-            ]
+            df_tasks.columns = [str(c).strip() for c in df_tareas_raw.iloc[h_idx_t].values]
             df_tasks = df_tasks.dropna(how="all")
 
             df_tasks["TAREA"] = df_tasks["TAREA"].astype(str).str.strip()
-            df_tasks = df_tasks[
-                df_tasks["TAREA"].notna()
-                & (df_tasks["TAREA"] != "nan")
-                & (df_tasks["TAREA"] != "")
-            ]
-
-            df_tasks["Estado"] = (
-                df_tasks["Estado"].fillna("Pendiente").astype(str).str.strip()
-            )
-            df_tasks["Responsable Principal"] = (
-                df_tasks["Responsable Principal"]
-                .fillna("Sin Asignar")
-                .astype(str)
-                .str.strip()
-            )
-            df_tasks["Departamento"] = (
-                df_tasks["Departamento"]
-                .fillna("General")
-                .astype(str)
-                .str.strip()
-            )
+            df_tasks = df_tasks[df_tasks["TAREA"].notna() & (df_tasks["TAREA"] != "nan") & (df_tasks["TAREA"] != "")]
+            df_tasks["Estado"] = df_tasks["Estado"].fillna("Pendiente").astype(str).str.strip()
+            df_tasks["Responsable Principal"] = df_tasks["Responsable Principal"].fillna("Sin Asignar").astype(str).str.strip()
+            df_tasks["Departamento"] = df_tasks["Departamento"].fillna("General").astype(str).str.strip()
         else:
             df_tasks = pd.DataFrame()
     else:
@@ -578,46 +351,24 @@ def load_data():
 # ==========================================
 # 3. HELPER DE GRÁFICAS MULTI-KPI
 # ==========================================
-def render_multi_kpi_chart(
-    df_kpis,
-    kpi_list,
-    title="Comparativa Multi-KPI",
-    height=420,
-    unit_label="Valores",
-):
-    existing_kpis = [
-        k
-        for k in kpi_list
-        if k in df_kpis["Medible"].values or k in df_kpis["Medible_Full"].values
-    ]
+def render_multi_kpi_chart(df_kpis, kpi_list, title="Comparativa Multi-KPI", height=420, unit_label="Valores"):
+    existing_kpis = [k for k in kpi_list if k in df_kpis["Medible"].values or k in df_kpis["Medible_Full"].values]
 
     if not existing_kpis:
         fig = go.Figure()
         fig.add_annotation(
             text="Selecciona al menos una categoría o medible para visualizar",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            font=dict(size=14, color="#7A1C29"),
+            xref="paper", yref="paper", x=0.5, y=0.5, showarrow=False, font=dict(size=14, color="#7A1C29"),
         )
-        fig.update_layout(
-            height=height, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF"
-        )
+        fig.update_layout(height=height, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF")
         return fig
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     for idx, kpi in enumerate(existing_kpis):
-        sub_df = df_kpis[
-            (df_kpis["Medible_Full"] == kpi) | (df_kpis["Medible"] == kpi)
-        ].copy()
+        sub_df = df_kpis[(df_kpis["Medible_Full"] == kpi) | (df_kpis["Medible"] == kpi)].copy()
 
-        if (
-            kpi in sub_df["Medible"].values
-            and sub_df["Categoria_Clean"].nunique() > 1
-        ):
+        if kpi in sub_df["Medible"].values and sub_df["Categoria_Clean"].nunique() > 1:
             sub_df = sub_df.groupby("Semana", as_index=False)["Valor"].sum()
 
         sub_df = sub_df[sub_df["Valor"].notna()]
@@ -628,12 +379,7 @@ def render_multi_kpi_chart(
         max_val = sub_df["Valor"].max()
         use_secondary = max_val > 15000 and "Bs" not in unit_label
 
-        hover_template = (
-            f"<b>{kpi}</b><br>"
-            "🗓️ %{x}<br>"
-            "📊 Valor: <b>%{y:,.2f}</b>"
-            "<extra></extra>"
-        )
+        hover_template = f"<b>{kpi}</b><br>🗓️ %{{x}}<br>📊 Valor: <b>%{{y:,.2f}}</b><extra></extra>"
 
         fig.add_trace(
             go.Scatter(
@@ -650,56 +396,29 @@ def render_multi_kpi_chart(
         )
 
     fig.update_layout(
-        title=dict(
-            text=f"<b>{title}</b>",
-            font=dict(size=15, color="#7A1C29"),
-            x=0,
-            y=0.98,
-        ),
-        xaxis=dict(
-            title=None, tickangle=-45, showgrid=True, gridcolor="#EFECE6"
-        ),
+        title=dict(text=f"<b>{title}</b>", font=dict(size=15, color="#7A1C29"), x=0, y=0.98),
+        xaxis=dict(title=None, tickangle=-45, showgrid=True, gridcolor="#EFECE6"),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="#FFFFFF",
         height=height,
         hovermode="closest",
         legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=-0.28,
-            xanchor="center",
-            x=0.5,
-            bgcolor="rgba(255,255,255,0.85)",
-            bordercolor="#DFD9CE",
-            borderwidth=1,
+            orientation="h", yanchor="top", y=-0.28, xanchor="center", x=0.5,
+            bgcolor="rgba(255,255,255,0.85)", bordercolor="#DFD9CE", borderwidth=1,
         ),
         margin=dict(l=55, r=55, t=50, b=110),
     )
 
-    fig.update_yaxes(
-        title_text=unit_label,
-        showgrid=True,
-        gridcolor="#EFECE6",
-        tickformat=",.0f",
-        secondary_y=False,
-    )
-    fig.update_yaxes(
-        title_text=f"{unit_label} (Volumen Alto)",
-        showgrid=False,
-        tickformat=",.0f",
-        secondary_y=True,
-    )
+    fig.update_yaxes(title_text=unit_label, showgrid=True, gridcolor="#EFECE6", tickformat=",.0f", secondary_y=False)
+    fig.update_yaxes(title_text=f"{unit_label} (Volumen Alto)", showgrid=False, tickformat=",.0f", secondary_y=True)
 
     return fig
 
 
 if hasattr(st, "dialog"):
-
     @st.dialog("🔍 Vista Ampliada del Gráfico", width="large")
     def show_full_graph_dialog(df, kpi_list, title, unit_label="Valores"):
-        fig = render_multi_kpi_chart(
-            df, kpi_list, title=title, height=600, unit_label=unit_label
-        )
+        fig = render_multi_kpi_chart(df, kpi_list, title=title, height=600, unit_label=unit_label)
         st.plotly_chart(fig, use_container_width=True, key=f"dialog_{title}")
 
 
@@ -725,9 +444,7 @@ if st.sidebar.button("🔄 Actualizar Datos Ahora", use_container_width=True):
     st.cache_data.clear()
     st.sidebar.success("¡Datos actualizados!")
 
-st.sidebar.link_button(
-    "🌐 Abrir Sheet en Google Drive", ONLINE_SHEET_URL, use_container_width=True
-)
+st.sidebar.link_button("🌐 Abrir Sheet en Google Drive", ONLINE_SHEET_URL, use_container_width=True)
 
 try:
     df_kpis, df_tasks, df_vc = load_data()
@@ -758,51 +475,27 @@ if menu_option == "📊 Dashboards KPIs":
 
     if not df_kpis.empty and "Medible" in df_kpis.columns:
         semanas_unicas = list(df_kpis["Semana"].unique())
-        deptos_unicos = ["Todos"] + sorted(
-            [
-                str(d)
-                for d in df_kpis["Departamento"].dropna().unique()
-                if str(d) != "nan" and str(d) != "Sin Depto"
-            ]
-        )
+        deptos_unicos = ["Todos"] + sorted([str(d) for d in df_kpis["Departamento"].dropna().unique() if str(d) not in ["nan", "Sin Depto"]])
 
         col_f1, col_f2, col_f3 = st.columns([1, 1, 1])
         with col_f1:
-            selected_week = st.selectbox(
-                "Seleccionar Semana a Inspeccionar:",
-                semanas_unicas,
-                index=len(semanas_unicas) - 1,
-            )
+            selected_week = st.selectbox("Seleccionar Semana a Inspeccionar:", semanas_unicas, index=len(semanas_unicas) - 1)
 
         with col_f2:
-            selected_dept = st.selectbox(
-                "Filtrar por Departamento:", deptos_unicos
-            )
+            selected_dept = st.selectbox("Filtrar por Departamento:", deptos_unicos)
 
         df_filtered_dept = df_kpis.copy()
         if selected_dept != "Todos":
-            df_filtered_dept = df_filtered_dept[
-                df_filtered_dept["Departamento"] == selected_dept
-            ]
+            df_filtered_dept = df_filtered_dept[df_filtered_dept["Departamento"] == selected_dept]
 
-        responsables = ["Todos"] + sorted(
-            [
-                str(r)
-                for r in df_filtered_dept["Responsable"].dropna().unique()
-                if str(r) != "nan"
-            ]
-        )
+        responsables = ["Todos"] + sorted([str(r) for r in df_filtered_dept["Responsable"].dropna().unique() if str(r) != "nan"])
         with col_f3:
-            selected_resp = st.selectbox(
-                "Filtrar por Responsable:", responsables
-            )
+            selected_resp = st.selectbox("Filtrar por Responsable:", responsables)
 
         current_week_idx = semanas_unicas.index(selected_week)
         df_all_selected = df_filtered_dept.copy()
         if selected_resp != "Todos":
-            df_all_selected = df_all_selected[
-                df_all_selected["Responsable"] == selected_resp
-            ]
+            df_all_selected = df_all_selected[df_all_selected["Responsable"] == selected_resp]
 
         metrics_list = df_all_selected["Medible"].unique()
 
@@ -811,19 +504,11 @@ if menu_option == "📊 Dashboards KPIs":
         if len(metrics_list) > 0:
             cols = st.columns(4)
             for idx, kpi in enumerate(metrics_list):
-                df_kpi_series = df_filtered_dept[
-                    df_filtered_dept["Medible"] == kpi
-                ]
+                df_kpi_series = df_filtered_dept[df_filtered_dept["Medible"] == kpi]
                 if selected_resp != "Todos":
-                    df_kpi_series = df_kpi_series[
-                        df_kpi_series["Responsable"] == selected_resp
-                    ]
+                    df_kpi_series = df_kpi_series[df_kpi_series["Responsable"] == selected_resp]
 
-                resp = (
-                    df_kpi_series["Responsable"].dropna().values[0]
-                    if not df_kpi_series.empty
-                    else "-"
-                )
+                resp = df_kpi_series["Responsable"].dropna().values[0] if not df_kpi_series.empty else "-"
 
                 val_curr = 0.0
                 actual_data_week = selected_week
@@ -832,9 +517,7 @@ if menu_option == "📊 Dashboards KPIs":
                 def get_week_data(w_name):
                     rows_w = df_kpi_series[df_kpi_series["Semana"] == w_name]
                     valid_rows = rows_w[rows_w["Valor"].notna()]
-                    if not valid_rows.empty:
-                        return valid_rows
-                    return None
+                    return valid_rows if not valid_rows.empty else None
 
                 df_current_rows = None
                 for w_idx in range(current_week_idx, -1, -1):
@@ -852,19 +535,11 @@ if menu_option == "📊 Dashboards KPIs":
                 prev_w_name = ""
                 avg_total = 0.0
 
-                actual_week_idx_found = (
-                    semanas_unicas.index(actual_data_week)
-                    if actual_data_week in semanas_unicas
-                    else -1
-                )
+                actual_week_idx_found = semanas_unicas.index(actual_data_week) if actual_data_week in semanas_unicas else -1
 
                 present_cats = []
                 if df_current_rows is not None and not df_current_rows.empty:
-                    present_cats = [
-                        c
-                        for c in df_current_rows["Categoria_Clean"].unique()
-                        if c != ""
-                    ]
+                    present_cats = [c for c in df_current_rows["Categoria_Clean"].unique() if c != ""]
 
                 df_prev_rows = None
                 if actual_week_idx_found > 0:
@@ -878,16 +553,11 @@ if menu_option == "📊 Dashboards KPIs":
 
                 if present_cats:
                     if df_prev_rows is not None:
-                        valid_prev = df_prev_rows[
-                            df_prev_rows["Categoria_Clean"].isin(present_cats)
-                            & df_prev_rows["Valor"].notna()
-                        ]
+                        valid_prev = df_prev_rows[df_prev_rows["Categoria_Clean"].isin(present_cats) & df_prev_rows["Valor"].notna()]
                         if not valid_prev.empty:
                             val_prev = float(valid_prev["Valor"].sum())
 
-                    filtered_series = df_kpi_series[
-                        df_kpi_series["Categoria_Clean"].isin(present_cats)
-                    ]
+                    filtered_series = df_kpi_series[df_kpi_series["Categoria_Clean"].isin(present_cats)]
                     valid_series = filtered_series.dropna(subset=["Valor"])
                     if not valid_series.empty:
                         weekly_totals = valid_series.groupby("Semana")["Valor"].sum()
@@ -956,9 +626,7 @@ if menu_option == "📊 Dashboards KPIs":
 
                 breakdown_html = ""
                 if df_current_rows is not None and not df_current_rows.empty:
-                    categories_rows = df_current_rows[
-                        df_current_rows["Categoria_Clean"] != ""
-                    ]
+                    categories_rows = df_current_rows[df_current_rows["Categoria_Clean"] != ""]
                     if len(categories_rows) > 0:
                         items_html = ""
                         for _, row_cat in categories_rows.iterrows():
@@ -968,9 +636,7 @@ if menu_option == "📊 Dashboards KPIs":
                             
                             cat_pct_html = ""
                             if df_prev_rows is not None and not df_prev_rows.empty:
-                                prev_cat_row = df_prev_rows[
-                                    df_prev_rows["Categoria_Clean"] == c_name
-                                ]
+                                prev_cat_row = df_prev_rows[df_prev_rows["Categoria_Clean"] == c_name]
                                 if not prev_cat_row.empty and pd.notna(prev_cat_row["Valor"].values[0]):
                                     c_prev_val = float(prev_cat_row["Valor"].values[0])
                                     if c_prev_val > 0 and c_val is not None:
@@ -986,16 +652,10 @@ if menu_option == "📊 Dashboards KPIs":
                                 f'</div>'
                             )
 
-                        breakdown_html = (
-                            f'<div class="kpi-breakdown-box">{items_html}</div>'
-                        )
+                        breakdown_html = f'<div class="kpi-breakdown-box">{items_html}</div>'
 
                 fallback_class = "kpi-border-fallback" if is_fallback else ""
-                fallback_tag = (
-                    f'<div><span class="badge-warning">⚠️ {actual_data_week}</span></div>'
-                    if is_fallback
-                    else ""
-                )
+                fallback_tag = f'<div><span class="badge-warning">⚠️ {actual_data_week}</span></div>' if is_fallback else ""
 
                 html_code = (
                     f'<div class="kpi-card-base {bg_color_class} {fallback_class}">'
@@ -1026,11 +686,7 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
 
     if not df_kpis.empty and "Medible" in df_kpis.columns:
         all_kpis_base = list(df_kpis["Medible"].unique())
-        all_kpis_full = [
-            k
-            for k in df_kpis["Medible_Full"].unique()
-            if k and str(k) != "nan"
-        ]
+        all_kpis_full = [k for k in df_kpis["Medible_Full"].unique() if k and str(k) != "nan"]
         all_kpis_in_db = sorted(list(set(all_kpis_base + all_kpis_full)))
 
         def find_kpis_exact_or_keyword(category_list):
@@ -1039,173 +695,56 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
                 k_upper = str(k).upper()
                 for cat in category_list:
                     cat_upper = cat.upper()
-                    if (
-                        cat_upper in k_upper
-                        or (cat_upper == "TORTAS" and "TORTA" in k_upper)
-                        or (cat_upper == "SALADOS" and "SALADO" in k_upper)
-                    ):
+                    if (cat_upper in k_upper or 
+                        (cat_upper == "TORTAS" and "TORTA" in k_upper) or 
+                        (cat_upper == "SALADOS" and "SALADO" in k_upper)):
                         matched.append(k)
                         break
             return list(set(matched))
 
-        kpi_g1 = [
-            k
-            for k in all_kpis_in_db
-            if any(
-                kw in k.upper()
-                for kw in [
-                    "VENTAS",
-                    "PAGOS PROVEEDORES MP",
-                    "TOTAL C X P",
-                    "BALANCE EFECTIVO",
-                ]
-            )
-        ]
-        kpi_g3 = [
-            k
-            for k in all_kpis_in_db
-            if any(
-                kw in k.upper()
-                for kw in [
-                    "INVERSION RRSS",
-                    "PAGO PROVEEDORES MARKETING",
-                    "VENTAS",
-                ]
-            )
-        ]
+        kpi_g1 = [k for k in all_kpis_in_db if any(kw in k.upper() for kw in ["VENTAS", "PAGOS PROVEEDORES MP", "TOTAL C X P", "BALANCE EFECTIVO"])]
+        kpi_g3 = [k for k in all_kpis_in_db if any(kw in k.upper() for kw in ["INVERSION RRSS", "PAGO PROVEEDORES MARKETING", "VENTAS"])]
 
         c1, c2 = st.columns(2)
         with c1:
-            st.markdown(
-                '<div class="compare-card-title">💵 1. Ventas vs Pagos vs CxP vs Efectivo (Bs)</div>',
-                unsafe_allow_html=True,
-            )
-            fig1 = render_multi_kpi_chart(
-                df_kpis,
-                kpi_g1,
-                title="Finanzas & Flujo de Caja",
-                height=380,
-                unit_label="Monto en Bs",
-            )
+            st.markdown('<div class="compare-card-title">💵 1. Ventas vs Pagos vs CxP vs Efectivo (Bs)</div>', unsafe_allow_html=True)
+            fig1 = render_multi_kpi_chart(df_kpis, kpi_g1, title="Finanzas & Flujo de Caja", height=380, unit_label="Monto en Bs")
             st.plotly_chart(fig1, use_container_width=True, key="card_1_main")
-            if st.button(
-                "🔍 Maximizar Gráfico 1",
-                key="btn_max_1",
-                use_container_width=True,
-            ):
-                show_full_graph_dialog(
-                    df_kpis,
-                    kpi_g1,
-                    "Finanzas & Flujo de Caja",
-                    unit_label="Monto en Bs",
-                )
+            if st.button("🔍 Maximizar Gráfico 1", key="btn_max_1", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g1, "Finanzas & Flujo de Caja", unit_label="Monto en Bs")
 
         with c2:
-            st.markdown(
-                '<div class="compare-card-title">🍰 2. Producción, Envíos y Bajas por Categoría</div>',
-                unsafe_allow_html=True,
-            )
-            categorias_bekerai = [
-                "Salados",
-                "Tortas",
-                "Pasteles Individuales",
-                "Postres Enteros",
-                "Panaderia",
-            ]
-            selected_cats = st.multiselect(
-                "Filtrar Categorías:",
-                categorias_bekerai,
-                default=["Salados", "Tortas"],
-            )
+            st.markdown('<div class="compare-card-title">🍰 2. Producción, Envíos y Bajas por Categoría</div>', unsafe_allow_html=True)
+            categorias_bekerai = ["Salados", "Tortas", "Pasteles Individuales", "Postres Enteros", "Panaderia"]
+            selected_cats = st.multiselect("Filtrar Categorías:", categorias_bekerai, default=["Salados", "Tortas"])
 
-            kpi_g2 = (
-                find_kpis_exact_or_keyword(selected_cats)
-                if selected_cats
-                else []
-            )
-            fig2 = render_multi_kpi_chart(
-                df_kpis,
-                kpi_g2,
-                title="Flujo de Categorías Seleccionadas",
-                height=380,
-                unit_label="Unidades",
-            )
+            kpi_g2 = find_kpis_exact_or_keyword(selected_cats) if selected_cats else []
+            fig2 = render_multi_kpi_chart(df_kpis, kpi_g2, title="Flujo de Categorías Seleccionadas", height=380, unit_label="Unidades")
             st.plotly_chart(fig2, use_container_width=True, key="card_2_main")
-            if st.button(
-                "🔍 Maximizar Gráfico 2",
-                key="btn_max_2",
-                use_container_width=True,
-            ):
-                show_full_graph_dialog(
-                    df_kpis,
-                    kpi_g2,
-                    "Flujo de Categorías Seleccionadas",
-                    unit_label="Unidades",
-                )
+            if st.button("🔍 Maximizar Gráfico 2", key="btn_max_2", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g2, "Flujo de Categorías Seleccionadas", unit_label="Unidades")
 
         st.markdown("---")
         c3, c4 = st.columns(2)
         with c3:
-            st.markdown(
-                '<div class="compare-card-title">📣 3. Inversión Marketing vs Ventas (Bs)</div>',
-                unsafe_allow_html=True,
-            )
-            fig3 = render_multi_kpi_chart(
-                df_kpis,
-                kpi_g3,
-                title="Marketing & Retorno",
-                height=380,
-                unit_label="Monto en Bs",
-            )
+            st.markdown('<div class="compare-card-title">📣 3. Inversión Marketing vs Ventas (Bs)</div>', unsafe_allow_html=True)
+            fig3 = render_multi_kpi_chart(df_kpis, kpi_g3, title="Marketing & Retorno", height=380, unit_label="Monto en Bs")
             st.plotly_chart(fig3, use_container_width=True, key="card_3_main")
-            if st.button(
-                "🔍 Maximizar Gráfico 3",
-                key="btn_max_3",
-                use_container_width=True,
-            ):
-                show_full_graph_dialog(
-                    df_kpis,
-                    kpi_g3,
-                    "Marketing & Retorno",
-                    unit_label="Monto en Bs",
-                )
+            if st.button("🔍 Maximizar Gráfico 3", key="btn_max_3", use_container_width=True):
+                show_full_graph_dialog(df_kpis, kpi_g3, "Marketing & Retorno", unit_label="Monto en Bs")
 
         with c4:
-            st.markdown(
-                '<div class="compare-card-title">🛠️ 4. Comparador Libre</div>',
-                unsafe_allow_html=True,
-            )
+            st.markdown('<div class="compare-card-title">🛠️ 4. Comparador Libre</div>', unsafe_allow_html=True)
             selected_custom = st.multiselect(
                 "Selecciona cualquier conjunto de KPIs:",
                 all_kpis_in_db,
-                default=(
-                    all_kpis_in_db[:2]
-                    if len(all_kpis_in_db) >= 2
-                    else all_kpis_in_db
-                ),
+                default=all_kpis_in_db[:2] if len(all_kpis_in_db) >= 2 else all_kpis_in_db
             )
             if selected_custom:
-                fig4 = render_multi_kpi_chart(
-                    df_kpis,
-                    selected_custom,
-                    title="Selección Libre Personalizada",
-                    height=350,
-                    unit_label="Valores",
-                )
-                st.plotly_chart(
-                    fig4, use_container_width=True, key="card_4_main"
-                )
-                if st.button(
-                    "🔍 Maximizar Gráfico 4",
-                    key="btn_max_4",
-                    use_container_width=True,
-                ):
-                    show_full_graph_dialog(
-                        df_kpis,
-                        selected_custom,
-                        "Selección Libre Personalizada",
-                        unit_label="Valores",
-                    )
+                fig4 = render_multi_kpi_chart(df_kpis, selected_custom, title="Selección Libre Personalizada", height=350, unit_label="Valores")
+                st.plotly_chart(fig4, use_container_width=True, key="card_4_main")
+                if st.button("🔍 Maximizar Gráfico 4", key="btn_max_4", use_container_width=True):
+                    show_full_graph_dialog(df_kpis, selected_custom, "Selección Libre Personalizada", unit_label="Valores")
 
 # ------------------------------------------
 # MÓDULO 3: ANÁLISIS CLIMA & FESTIVOS
@@ -1251,7 +790,6 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     else:
         st.markdown(analysis_card_html, unsafe_allow_html=True)
 
-    # CÁLCULO DINÁMICO DE FECHAS (Semana de Lunes a Domingo)
     today = datetime.now()
     monday_w1 = today - timedelta(days=today.weekday())
     sunday_w1 = monday_w1 + timedelta(days=6)
@@ -1336,12 +874,10 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
             ("Navidad (Feriado Oficial)", "25/12/2026"),
         ]
 
-        festivos_rows = "".join(
-            [
-                f'<div class="festivo-row"><span class="festivo-name">🎉 {nombre}</span><span class="festivo-date">{fecha}</span></div>'
-                for nombre, fecha in festivos_list
-            ]
-        )
+        festivos_rows = "".join([
+            f'<div class="festivo-row"><span class="festivo-name">🎉 {nombre}</span><span class="festivo-date">{fecha}</span></div>'
+            for nombre, fecha in festivos_list
+        ])
 
         festivos_card_html = textwrap.dedent(f"""
         <div class="sub-card">
@@ -1365,25 +901,13 @@ elif menu_option == "📝 Gestión de Tareas":
     if not df_tasks.empty:
         f_col1, f_col2, f_col3 = st.columns(3)
 
-        estados_disponibles = sorted(
-            list(df_tasks["Estado"].dropna().unique())
-        )
+        estados_disponibles = sorted(list(df_tasks["Estado"].dropna().unique()))
         with f_col1:
-            sel_estados = st.multiselect(
-                "📌 Filtrar por Estado:",
-                estados_disponibles,
-                default=estados_disponibles,
-            )
+            sel_estados = st.multiselect("📌 Filtrar por Estado:", estados_disponibles, default=estados_disponibles)
 
-        deptos_disponibles = sorted(
-            list(df_tasks["Departamento"].dropna().unique())
-        )
+        deptos_disponibles = sorted(list(df_tasks["Departamento"].dropna().unique()))
         with f_col2:
-            sel_deptos = st.multiselect(
-                "🏢 Filtrar por Departamento:",
-                deptos_disponibles,
-                default=deptos_disponibles,
-            )
+            sel_deptos = st.multiselect("🏢 Filtrar por Departamento:", deptos_disponibles, default=deptos_disponibles)
 
         all_resps = set(df_tasks["Responsable Principal"].dropna().tolist())
         if "Responsable 2" in df_tasks.columns:
@@ -1391,44 +915,24 @@ elif menu_option == "📝 Gestión de Tareas":
         if "Responsable 3" in df_tasks.columns:
             all_resps.update(df_tasks["Responsable 3"].dropna().tolist())
 
-        all_resps_list = sorted(
-            [
-                r
-                for r in all_resps
-                if str(r) != "nan" and str(r).strip() != "None" and str(r).strip() != ""
-            ]
-        )
+        all_resps_list = sorted([r for r in all_resps if str(r) not in ["nan", "None", ""]])
 
         with f_col3:
-            sel_resps = st.multiselect(
-                "👤 Filtrar por Responsable:", all_resps_list, default=[]
-            )
+            sel_resps = st.multiselect("👤 Filtrar por Responsable:", all_resps_list, default=[])
 
         df_filtered = df_tasks.copy()
 
         if sel_estados:
             df_filtered = df_filtered[df_filtered["Estado"].isin(sel_estados)]
         if sel_deptos:
-            df_filtered = df_filtered[
-                df_filtered["Departamento"].isin(sel_deptos)
-            ]
+            df_filtered = df_filtered[df_filtered["Departamento"].isin(sel_deptos)]
         if sel_resps:
             mask_r1 = df_filtered["Responsable Principal"].isin(sel_resps)
-            mask_r2 = (
-                df_filtered["Responsable 2"].isin(sel_resps)
-                if "Responsable 2" in df_filtered.columns
-                else False
-            )
-            mask_r3 = (
-                df_filtered["Responsable 3"].isin(sel_resps)
-                if "Responsable 3" in df_filtered.columns
-                else False
-            )
+            mask_r2 = df_filtered["Responsable 2"].isin(sel_resps) if "Responsable 2" in df_filtered.columns else False
+            mask_r3 = df_filtered["Responsable 3"].isin(sel_resps) if "Responsable 3" in df_filtered.columns else False
             df_filtered = df_filtered[mask_r1 | mask_r2 | mask_r3]
 
-        st.markdown(
-            f"Mostrando **{len(df_filtered)}** de **{len(df_tasks)}** tareas en total."
-        )
+        st.markdown(f"Mostrando **{len(df_filtered)}** de **{len(df_tasks)}** tareas en total.")
         st.markdown("<br>", unsafe_allow_html=True)
 
         if not df_filtered.empty:
@@ -1438,43 +942,25 @@ elif menu_option == "📝 Gestión de Tareas":
                 estado_clean = estado.lower().replace(" ", "")
 
                 if "finaliz" in estado_clean or "complet" in estado_clean:
-                    row_class = "task-row-finalizado"
-                    badge_class = "badge-status-finalizado"
-                    badge_icon = "🟢"
+                    row_class, badge_class, badge_icon = "task-row-finalizado", "badge-status-finalizado", "🟢"
                 elif "proceso" in estado_clean:
-                    row_class = "task-row-proceso"
-                    badge_class = "badge-status-proceso"
-                    badge_icon = "🟡"
+                    row_class, badge_class, badge_icon = "task-row-proceso", "badge-status-proceso", "🟡"
                 else:
-                    row_class = "task-row-pendiente"
-                    badge_class = "badge-status-pendiente"
-                    badge_icon = "🔴"
+                    row_class, badge_class, badge_icon = "task-row-pendiente", "badge-status-pendiente", "🔴"
 
                 r2 = str(row.get("Responsable 2", "")).strip()
                 r3 = str(row.get("Responsable 3", "")).strip()
                 equipo_str = f"<b>{row['Responsable Principal']}</b>"
-                if r2 and r2 != "None" and r2 != "nan":
+                if r2 and r2 not in ["None", "nan"]:
                     equipo_str += f", {r2}"
-                if r3 and r3 != "None" and r3 != "nan":
+                if r3 and r3 not in ["None", "nan"]:
                     equipo_str += f", {r3}"
 
-                f_inicio = (
-                    str(row.get("Fecha Inicio", ""))
-                    .replace("00:00:00", "")
-                    .strip()
-                )
-                f_entrega = (
-                    str(row.get("Fecha Entrega", ""))
-                    .replace("00:00:00", "")
-                    .strip()
-                )
+                f_inicio = str(row.get("Fecha Inicio", "")).replace("00:00:00", "").strip()
+                f_entrega = str(row.get("Fecha Entrega", "")).replace("00:00:00", "").strip()
 
-                date_str = (
-                    f"🗓️ Inicio: {f_inicio}"
-                    if f_inicio and f_inicio != "nan"
-                    else ""
-                )
-                if f_entrega and f_entrega != "nan" and f_entrega != "None":
+                date_str = f"🗓️ Inicio: {f_inicio}" if f_inicio and f_inicio != "nan" else ""
+                if f_entrega and f_entrega not in ["nan", "None"]:
                     date_str += f" | 🏁 Entrega: <b>{f_entrega}</b>"
 
                 rows_html += (
@@ -1510,30 +996,14 @@ elif menu_option == "📝 Gestión de Tareas":
                 continue
             
             m1 = df_filtered["Responsable Principal"] == r
-            m2 = (
-                df_filtered["Responsable 2"] == r
-                if "Responsable 2" in df_filtered.columns
-                else False
-            )
-            m3 = (
-                df_filtered["Responsable 3"] == r
-                if "Responsable 3" in df_filtered.columns
-                else False
-            )
+            m2 = df_filtered["Responsable 2"] == r if "Responsable 2" in df_filtered.columns else False
+            m3 = df_filtered["Responsable 3"] == r if "Responsable 3" in df_filtered.columns else False
 
             sub_resp = df_filtered[m1 | m2 | m3]
 
-            pendientes = sum(
-                sub_resp["Estado"].str.lower().str.contains("pend", na=False)
-            )
-            proceso = sum(
-                sub_resp["Estado"].str.lower().str.contains("proceso", na=False)
-            )
-            finalizadas = sum(
-                sub_resp["Estado"]
-                .str.lower()
-                .str.contains("finaliz|complet", na=False)
-            )
+            pendientes = sum(sub_resp["Estado"].str.lower().str.contains("pend", na=False))
+            proceso = sum(sub_resp["Estado"].str.lower().str.contains("proceso", na=False))
+            finalizadas = sum(sub_resp["Estado"].str.lower().str.contains("finaliz|complet", na=False))
 
             resp_stats[r] = {
                 "Pendientes": pendientes,
@@ -1571,30 +1041,20 @@ elif menu_option == "📝 Gestión de Tareas":
 # ------------------------------------------
 elif menu_option == "🏆 Scorecard & Cumplimiento":
     st.subheader("🏆 Cumplimiento por Responsable")
-    if (
-        not df_tasks.empty
-        and "Estado" in df_tasks.columns
-        and "Responsable Principal" in df_tasks.columns
-    ):
+    if not df_tasks.empty and "Estado" in df_tasks.columns and "Responsable Principal" in df_tasks.columns:
         task_summary = (
             df_tasks.groupby(["Responsable Principal", "Estado"])
             .size()
             .unstack(fill_value=0)
         )
-        task_summary["Completadas"] = task_summary.get(
-            "Finalizado", 0
-        ) + task_summary.get("Completado", 0)
-        task_summary["Total Tareas"] = (
-            task_summary.sum(axis=1) - task_summary["Completadas"]
-        )
+        task_summary["Completadas"] = task_summary.get("Finalizado", 0) + task_summary.get("Completado", 0)
+        task_summary["Total Tareas"] = task_summary.sum(axis=1) - task_summary["Completadas"]
         task_summary["% Cumplimiento"] = (
             (task_summary["Completadas"] / task_summary["Total Tareas"] * 100)
             .round(1)
             .fillna(0)
         )
-        task_summary = task_summary.reset_index().sort_values(
-            "% Cumplimiento", ascending=False
-        )
+        task_summary = task_summary.reset_index().sort_values("% Cumplimiento", ascending=False)
 
         fig_score = px.bar(
             task_summary,
@@ -1604,14 +1064,8 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
             color="% Cumplimiento",
             color_continuous_scale=["#C0392B", "#F39C12", "#27AE60"],
         )
-        fig_score.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="#FFFFFF",
-            yaxis=dict(range=[0, 100]),
-        )
-        st.plotly_chart(
-            fig_score, use_container_width=True, key="chart_scorecard"
-        )
+        fig_score.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF", yaxis=dict(range=[0, 100]))
+        st.plotly_chart(fig_score, use_container_width=True, key="chart_scorecard")
 
 # ------------------------------------------
 # MÓDULO 6: ASISTENTE IA COMERCIAL (GEMINI)
@@ -1619,7 +1073,6 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
 
-    # 1. AUTENTICACIÓN Y SEGURIDAD VÍA SECRETS & PIN (Regla 4)
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
         st.session_state.usuario_actual = None
@@ -1652,7 +1105,6 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # 2. CARGA SEGURA DE SECRETS Y SDK (Regla 4)
     try:
         from google import genai
         gemini_key = st.secrets.get("GEMINI_API_KEY", "").strip().replace("\n", "").replace("\r", "")
@@ -1664,28 +1116,30 @@ elif menu_option == "🤖 Asistente IA Comercial":
         st.error(f"⚠️ Ocurrió un problema al inicializar el servicio de Gemini IA: {err_import}")
         st.stop()
 
-    # 3. PROCESAMIENTO Y PROMPT CONTEXTUAL ESTRUCTURADO (Regla 3)
+    # OPTIMIZACIÓN DE TOKENS: Formato ligero comprimido para context window
     kpi_summary_str = "No hay datos de KPI disponibles."
     if not df_kpis.empty:
-        df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(100)
-        kpi_summary_str = df_kpi_sample[["Semana", "Medible", "Responsable", "Valor"]].to_string(index=False)
+        df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(50)
+        lines = [f"{r.Semana} | {r.Medible} | Resp: {r.Responsable} | Val: {r.Valor}" for _, r in df_kpi_sample.iterrows()]
+        kpi_summary_str = "\n".join(lines)
 
     tasks_summary_str = "No hay datos de Tareas disponibles."
     if not df_tasks.empty:
-        tasks_summary_str = df_tasks[["TAREA", "Responsable Principal", "Estado", "Departamento"]].to_string(index=False)
+        df_tasks_sample = df_tasks.tail(40)
+        lines_t = [f"Tarea: {r.TAREA} | Resp: {r.get('Responsable Principal','-')} | Estado: {r.Estado} | Depto: {r.Departamento}" for _, r in df_tasks_sample.iterrows()]
+        tasks_summary_str = "\n".join(lines_t)
 
     system_prompt = f"""
-    Eres el Consultor IA Comercial y Financiero Senior de la cadena de pastelerías Fridolin (Santa Cruz, Bolivia).
-    Tu objetivo es responder a las preguntas del equipo gerencial basándote estrictamente en los datos actuales de la empresa.
+    Eres el Consultor IA Comercial y Financiero Senior de Fridolin (Santa Cruz, Bolivia).
+    Responde a las preguntas del equipo gerencial basándote estrictamente en los siguientes datos resumidos:
 
-    === RESUMEN RECIENTE DE KPIS ===
+    === RESUMEN KPIS RECIENTES ===
     {kpi_summary_str}
 
-    === RESUMEN RECIENTE DE TAREAS ===
+    === RESUMEN TAREAS RECIENTES ===
     {tasks_summary_str}
     """
 
-    # Interfaz del Chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -1703,7 +1157,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 error_log = []
                 
-                # 4. REINTENTO MULTI-MODELO EN CASCADA CON NOMBRES OFICIALES (Regla 1 y 2)
+                # CASCADA DE MODELOS
                 modelos_candidatos = [
                     "models/gemini-2.0-flash",
                     "models/gemini-1.5-flash",
