@@ -1,5 +1,6 @@
 import re
 import textwrap
+from datetime import datetime, timedelta
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -161,7 +162,7 @@ FRIDOLIN_CSS = """
     .kpi-resp-tag { font-size: 0.73rem; font-weight: 600; margin-bottom: 0.1rem; }
     .compare-card-title { font-size: 1.05rem; font-weight: 700; color: #7A1C29; margin-bottom: 0.5rem; }
 
-    /* ESTILOS DE TARJETA ANALÍTICA ELEGANTE */
+    /* ESTILOS DE TARJETA ANALÍTICA */
     .analysis-card {
         background: #FFFFFF;
         border-radius: 16px;
@@ -1196,7 +1197,6 @@ elif menu_option == "🔀 Comparador KPI vs KPI":
 elif menu_option == "🌤️ Análisis Clima & Festivos":
     st.subheader("🌤️ Relación del Clima, Festividades y Producción por Categorías")
 
-    # SOLUCIÓN DEFINITIVA PARA HTML EN STREAMLIT: Usar textwrap.dedent() y st.html()
     analysis_card_html = textwrap.dedent("""
     <div class="analysis-card">
         <div class="analysis-title">💡 Opinión Analítica e Interpretación Comercial</div>
@@ -1230,17 +1230,28 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     </div>
     """)
 
-    # Renderizado directo usando el componente HTML nativo
     if hasattr(st, "html"):
         st.html(analysis_card_html)
     else:
         st.markdown(analysis_card_html, unsafe_allow_html=True)
 
-    # SECCIÓN INFERIOR EN 2 COLUMNAS (Métricas + Pronóstico & Calendario)
+    # CÁLCULO DINÁMICO DE FECHAS (Semana de Lunes a Domingo)
+    today = datetime.now()
+    # Lunes de la semana actual
+    monday_w1 = today - timedelta(days=today.weekday())
+    sunday_w1 = monday_w1 + timedelta(days=6)
+    
+    # Lunes y Domingo de la siguiente semana
+    monday_w2 = monday_w1 + timedelta(days=7)
+    sunday_w2 = sunday_w1 + timedelta(days=7)
+    
+    str_w1 = f"{monday_w1.strftime('%d/%m')} al {sunday_w1.strftime('%d/%m/%Y')}"
+    str_w2 = f"{monday_w2.strftime('%d/%m')} al {sunday_w2.strftime('%d/%m/%Y')}"
+
     col_left, col_right = st.columns(2)
 
     with col_left:
-        weather_card_html = textwrap.dedent("""
+        weather_card_html = textwrap.dedent(f"""
         <div class="sub-card">
             <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
             <div class="weather-grid">
@@ -1267,7 +1278,7 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
             </div>
 
             <div class="forecast-card">
-                <div class="forecast-header">🗓️ Semana 1 (Semana Entrante)</div>
+                <div class="forecast-header">🗓️ Semana Entrante ({str_w1})</div>
                 <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>28.5 °C</b></div>
                 <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>18.2 °C</b></div>
                 <div class="forecast-detail"><span>Precipitaciones:</span> <b>12 mm (Baja probabilidad)</b></div>
@@ -1275,7 +1286,7 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
             </div>
 
             <div class="forecast-card">
-                <div class="forecast-header">🗓️ Semana 2 (Siguiente Semana)</div>
+                <div class="forecast-header">🗓️ Siguiente Semana ({str_w2})</div>
                 <div class="forecast-detail"><span>Temp. Máxima Promedio:</span> <b>22.1 °C</b></div>
                 <div class="forecast-detail"><span>Temp. Mínima Promedio:</span> <b>13.5 °C</b></div>
                 <div class="forecast-detail"><span>Precipitaciones:</span> <b>45 mm (Ingreso de Surazo)</b></div>
