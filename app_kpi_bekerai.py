@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 # ==========================================
 # 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS
@@ -392,7 +392,7 @@ def cargar_usuarios():
         df_user['PIN'] = df_user['PIN'].astype(str).str.replace('.0', '', regex=False).str.strip()
         df_user['EMAIL'] = df_user['EMAIL'].astype(str).str.strip().str.lower()
         return df_user
-    except Exception:
+    except Exception as e:
         return pd.DataFrame()
 
 
@@ -1619,7 +1619,7 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
 
-    # 1. AUTENTICACIÓN Y SEGURIDAD VÍA SECRETS & PIN (Regla 4)
+    # Autenticación dinámica de usuarios por Email & PIN
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
         st.session_state.usuario_actual = None
@@ -1647,24 +1647,25 @@ elif menu_option == "🤖 Asistente IA Comercial":
                         st.success(f"¡Bienvenido/a {st.session_state.usuario_actual}!")
                         st.rerun()
                     else:
-                        st.error("Correo o PIN incorrecto.")
+                        st.error("Correo o PIN incorrecto. Revisa los datos de la pestaña 'Usuarios'.")
         st.stop()
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # 2. CARGA SEGURA DE SECRETS Y SDK (Regla 4)
-    try:
-        from google import genai
-        gemini_key = st.secrets.get("GEMINI_API_KEY", "").strip().replace("\n", "").replace("\r", "")
-        if not gemini_key:
-            st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
-            st.stop()
-        client = genai.Client(api_key=gemini_key)
-    except Exception as err_import:
-        st.error(f"⚠️ Ocurrió un problema al inicializar el servicio de Gemini IA: {err_import}")
+    # Configuración API Key de Gemini con SDK Oficial
+    gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+    if not gemini_key:
+        st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
         st.stop()
 
-    # 3. PROCESAMIENTO Y PROMPT CONTEXTUAL ESTRUCTURADO (Regla 3)
+    try:
+        # AQUÍ SE CORRIGIÓ LA INICIALIZACIÓN
+        genai.configure(api_key=gemini_key)
+    except Exception as e:
+        st.error(f"Error al configurar Gemini: {e}")
+        st.stop()
+
+    # Contexto de datos en tiempo real
     kpi_summary_str = "No hay datos de KPI disponibles."
     if not df_kpis.empty:
         df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(100)
@@ -1683,9 +1684,14 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     === RESUMEN RECIENTE DE TAREAS ===
     {tasks_summary_str}
+
+    INSTRUCCIONES DE RESPUESTA:
+    1. Responde de forma concisa, profesional y directa en español.
+    2. Utiliza viñetas o tablas cuando sea útil para mejorar la lectura.
+    3. Si la consulta involucra datos numéricos, especifica los valores o porcentajes según corresponda.
     """
 
-    # Interfaz del Chat
+    # Memoria de chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -1693,38 +1699,32 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
+    # Procesamiento con modelo Gemini actualizable
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("Analizando datos comerciales..."):
+            with st.spinner("Analizando datos comerciales con Gemini IA..."):
                 response_text = ""
-                error_log = []
+                candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro"]
                 
-                # 4. REINTENTO MULTI-MODELO EN CASCADA CON NOMBRES OFICIALES (Regla 1 y 2)
-                modelos_candidatos = [
-                    "models/gemini-2.0-flash",
-                    "models/gemini-1.5-flash",
-                    "models/gemini-1.5-flash-8b"
-                ]
-                
-                for model_id in modelos_candidatos:
+                success = False
+                for model_id in candidate_models:
                     try:
-                        res = client.models.generate_content(
-                            model=model_id,
-                            contents=f"{system_prompt}\n\nPregunta: {prompt}"
-                        )
+                        # AQUÍ SE CORRIGIÓ EL USO DEL MODELO
+                        model = genai.GenerativeModel(model_id)
+                        res = model.generate_content(f"{system_prompt}\n\nPregunta del usuario: {prompt}")
                         if res and res.text:
                             response_text = res.text
+                            success = True
                             break
                     except Exception as e:
-                        error_log.append(f"• `{model_id}`: {str(e)}")
+                        continue
 
-                if response_text:
-                    st.markdown(response_text)
-                    st.session_state.messages.append({"role": "assistant", "content": response_text})
-                else:
-                    detalles = "\n".join(error_log)
-                    st.error(f"❌ No se pudo obtener respuesta de la IA.\n\n**Detalles del error por modelo:**\n{detalles}")
+                if not success or not response_text:
+                    response_text = "❌ Lo sentimos, no se pudo procesar la solicitud con Gemini en este momento. Por favor, reintenta más tarde o verifica la vigencia de tu API Key."
+
+                st.markdown(response_text)
+                st.session_state.messages.append({"role": "assistant", "content": response_text})
