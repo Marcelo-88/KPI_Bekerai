@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # ==========================================
 # 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS
@@ -1652,13 +1652,17 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Configuración API Key de Gemini
+    # Configuración API Key de Gemini con SDK Oficial Recomendado (`google-genai`)
     gemini_key = st.secrets.get("GEMINI_API_KEY", "")
     if not gemini_key:
         st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
         st.stop()
 
-    genai.configure(api_key=gemini_key)
+    try:
+        ai_client = genai.Client(api_key=gemini_key)
+    except Exception as e:
+        st.error(f"Error al inicializar el cliente de Gemini: {e}")
+        st.stop()
 
     # Contexto de datos en tiempo real
     kpi_summary_str = "No hay datos de KPI disponibles."
@@ -1694,7 +1698,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Procesamiento con cascada de fallback activa para modelos de Gemini
+    # Procesamiento con modelo Gemini actualizable mediante SDK oficial
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -1703,32 +1707,15 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message("assistant"):
             with st.spinner("Analizando datos comerciales con Gemini IA..."):
                 response_text = ""
+                candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
                 
-                candidate_models = [
-                    "models/gemini-2.0-flash",
-                    "models/gemini-1.5-flash",
-                    "models/gemini-1.5-flash-8b",
-                    "gemini-1.5-flash"
-                ]
-
-                try:
-                    available_models = [
-                        m.name for m in genai.list_models()
-                        if "generateContent" in m.supported_generation_methods
-                        and not any(tag in m.name.lower() for tag in ["tts", "audio", "embed"])
-                    ]
-                    candidate_models = [m for m in candidate_models if m in available_models] + candidate_models
-                except Exception:
-                    pass
-
                 success = False
-                for model_name in candidate_models:
+                for model_id in candidate_models:
                     try:
-                        model = genai.GenerativeModel(
-                            model_name=model_name,
-                            system_instruction=system_prompt
+                        res = ai_client.models.generate_content(
+                            model=model_id,
+                            contents=f"{system_prompt}\n\nPregunta del usuario: {prompt}"
                         )
-                        res = model.generate_content(prompt)
                         if res and res.text:
                             response_text = res.text
                             success = True
