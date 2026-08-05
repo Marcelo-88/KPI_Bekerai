@@ -1619,7 +1619,7 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
 
-    # Autenticación dinámica de usuarios por Email & PIN
+    # Autenticación dinámica de usuarios
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
         st.session_state.usuario_actual = None
@@ -1652,16 +1652,10 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Configuración API Key de Gemini con SDK Oficial Recomendado (`google-genai`)
+    # Lectura y validación de API Key
     gemini_key = st.secrets.get("GEMINI_API_KEY", "")
     if not gemini_key:
-        st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
-        st.stop()
-
-    try:
-        ai_client = genai.Client(api_key=gemini_key)
-    except Exception as e:
-        st.error(f"Error al inicializar el cliente de Gemini: {e}")
+        st.error("⚠️ No se encontró la clave `GEMINI_API_KEY` en los Secrets de Streamlit.")
         st.stop()
 
     # Contexto de datos en tiempo real
@@ -1676,7 +1670,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     system_prompt = f"""
     Eres el Consultor IA Comercial y Financiero Senior de la cadena de pastelerías Fridolin (Santa Cruz, Bolivia).
-    Tu objetivo es responder a las preguntas del equipo gerencial basándote estrictamente en los datos actuales de la empresa.
+    Tu objetivo es responder a las preguntas del equipo gerencial basándote en los datos actuales de la empresa.
 
     === RESUMEN RECIENTE DE KPIS ===
     {kpi_summary_str}
@@ -1698,7 +1692,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Procesamiento con modelo Gemini actualizable mediante SDK oficial
+    # Procesamiento del prompt
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -1707,9 +1701,18 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message("assistant"):
             with st.spinner("Analizando datos comerciales con Gemini IA..."):
                 response_text = ""
-                candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
-                
-                success = False
+                last_error = ""
+
+                # Inicialización del cliente oficial
+                try:
+                    ai_client = genai.Client(api_key=str(gemini_key).strip())
+                except Exception as e_init:
+                    st.error(f"Error al inicializar cliente Gemini: {e_init}")
+                    st.stop()
+
+                # Lista con los IDs de modelos soportados
+                candidate_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+
                 for model_id in candidate_models:
                     try:
                         res = ai_client.models.generate_content(
@@ -1718,13 +1721,13 @@ elif menu_option == "🤖 Asistente IA Comercial":
                         )
                         if res and res.text:
                             response_text = res.text
-                            success = True
                             break
-                    except Exception:
+                    except Exception as e_gen:
+                        last_error = str(e_gen)
                         continue
 
-                if not success or not response_text:
-                    response_text = "❌ Lo sentimos, no se pudo procesar la solicitud con Gemini en este momento. Por favor, reintenta más tarde o verifica la vigencia de tu API Key."
+                if not response_text:
+                    response_text = f"❌ **Error al conectar con la API de Gemini:**\n\n`{last_error}`\n\n*Verifica que tu clave en Secrets esté activa y tenga permisos habilitados en Google AI Studio.*"
 
                 st.markdown(response_text)
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
