@@ -1251,8 +1251,8 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     else:
         st.markdown(analysis_card_html, unsafe_allow_html=True)
 
-    # CÁLCULO DINÁMICO DE FECHAS (Semana de Lunes a Domingo)
-    today = datetime.now()
+    # CÁLCULO DINÁMICO DE FECHAS DE LA SEMANA ACTUAL Y SIGUIENTE (Agosto 2026)
+    today = datetime(2026, 8, 4)
     # Lunes de la semana actual
     monday_w1 = today - timedelta(days=today.weekday())
     sunday_w1 = monday_w1 + timedelta(days=6)
