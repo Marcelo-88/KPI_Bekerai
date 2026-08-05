@@ -325,9 +325,7 @@ st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 # ==========================================
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
-ONLINE_SHEET_URL = (
-    f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/edit"
-)
+ONLINE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/edit"
 
 
 def parse_custom_number(val):
@@ -383,7 +381,12 @@ def format_kpi_value(val, medible_name):
 
 @st.cache_data(ttl=60)
 def load_data():
-    sheets = pd.read_excel(EXCEL_URL, sheet_name=None, header=None)
+    # Optimización: Cargar únicamente las pestañas requeridas
+    sheets = pd.read_excel(
+        EXCEL_URL, 
+        sheet_name=["KPI", "Tareas", "Ventas_Clima"], 
+        header=None
+    )
 
     # PARSER PESTAÑA KPI
     df_kpi_raw = sheets.get("KPI", pd.DataFrame())
@@ -534,7 +537,7 @@ def load_data():
     else:
         df_tasks = pd.DataFrame()
 
-    # PARSER PESTAÑA VENTAS_CLIMA (Para Módulo Clima)
+    # PARSER PESTAÑA VENTAS_CLIMA
     df_vc_raw = sheets.get("Ventas_Clima", pd.DataFrame())
     if not df_vc_raw.empty:
         h_idx_vc = None
@@ -1197,7 +1200,7 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     analysis_html = """
     <div class="analysis-card">
         <div class="analysis-title">💡 Opinión Analítica e Interpretación Comercial</div>
-        <div class="analysis-author">POR: ANALISTA COMERCIAL & DE VENTAS (GEMINI)</div>
+        <div class="analysis-author">POR: ANALISTA COMERCIAL & DE VENTAS</div>
         
         <p style="font-size: 0.95rem; line-height: 1.5; color: #333;">
             Análisis cualitativo y porcentual basado en la relación de Ventas Totales semanales, Clima en Santa Cruz y la Producción por Categorías (Panadería, Pasteles Individuales, Postres Enteros, Salados y Tortas):
