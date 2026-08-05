@@ -1619,7 +1619,7 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
 
-    # Autenticación de usuario
+    # 4. Seguridad y Autenticación
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
         st.session_state.usuario_actual = None
@@ -1652,13 +1652,16 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Lectura de la API Key desde Secrets
+    # Carga de Secret
     gemini_key = st.secrets.get("GEMINI_API_KEY", "")
     if not gemini_key:
         st.error("⚠️ No se encontró la clave `GEMINI_API_KEY` en los Secrets de Streamlit.")
         st.stop()
 
-    # Contexto de datos en tiempo real
+    import google.generativeai as genai
+    genai.configure(api_key=str(gemini_key).strip())
+
+    # 3. Carga e Inyección de Prompt Contextual
     kpi_summary_str = "No hay datos de KPI disponibles."
     if not df_kpis.empty:
         df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(100)
@@ -1692,7 +1695,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Procesamiento de la consulta
+    # Procesamiento del prompt
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -1703,37 +1706,37 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 last_error = ""
 
-                # Inicialización usando la librería cliente oficial con API v1
+                # 1. Filtrado Estricto de Modelos Compatibles (Texto)
+                valid_models = []
                 try:
-                    from google import genai
-                    ai_client = genai.Client(api_key=str(gemini_key).strip())
+                    all_models = genai.list_models()
+                    for m in all_models:
+                        # Filtrar solo modelos que soporten generateContent y descarten TTS/Audio
+                        if 'generateContent' in m.supported_generation_methods:
+                            m_name = m.name.lower()
+                            if not any(bad in m_name for bad in ['tts', 'audio', 'embedding', 'bison', 'imagen']):
+                                valid_models.append(m.name)
+                except Exception as e_list:
+                    # Lista de fallback si list_models() falla
+                    valid_models = ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-2.0-flash-exp']
 
-                    # Se prueban los modelos soportados en v1
-                    candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
+                # Priorizar modelos Flash ordenando la lista
+                valid_models.sort(key=lambda x: 0 if 'flash' in x else 1)
 
-                    for m_id in candidate_models:
-                        try:
-                            res = ai_client.models.generate_content(
-                                model=m_id,
-                                contents=f"{system_prompt}\n\nPregunta del usuario: {prompt}"
-                            )
-                            if res and res.text:
-                                response_text = res.text
-                                break
-                        except Exception as e_m:
-                            last_error = str(e_m)
-                            continue
-
-                except Exception as e_import:
-                    # Fallback si no está instalado google-genai
+                # 2. Mecanismo de Fallback y Reintento Multi-Modelo
+                for model_name in valid_models:
                     try:
-                        import google.generativeai as legacy_genai
-                        legacy_genai.configure(api_key=str(gemini_key).strip())
-                        model = legacy_genai.GenerativeModel("gemini-1.5-flash")
-                        res = model.generate_content(f"{system_prompt}\n\nPregunta: {prompt}")
-                        response_text = res.text
-                    except Exception as e_legacy:
-                        last_error = f"Error en fallback legacy: {e_legacy}"
+                        model = genai.GenerativeModel(
+                            model_name=model_name,
+                            system_instruction=system_prompt
+                        )
+                        res = model.generate_content(prompt)
+                        if res and res.text:
+                            response_text = res.text
+                            break
+                    except Exception as e_gen:
+                        last_error = f"Error en {model_name}: {e_gen}"
+                        continue
 
                 if not response_text:
                     response_text = f"❌ **Error al conectar con la API de Gemini:**\n\n`{last_error}`"
