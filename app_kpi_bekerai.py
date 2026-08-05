@@ -1652,16 +1652,17 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Configuración API Key de Gemini con SDK Oficial Recomendado (`google-genai`)
+    # Configuración API Key de Gemini con SDK Oficial
     gemini_key = st.secrets.get("GEMINI_API_KEY", "")
     if not gemini_key:
         st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
         st.stop()
 
     try:
-        ai_client = genai.Client(api_key=gemini_key)
+        # AQUÍ SE CORRIGIÓ LA INICIALIZACIÓN
+        genai.configure(api_key=gemini_key)
     except Exception as e:
-        st.error(f"Error al inicializar el cliente de Gemini: {e}")
+        st.error(f"Error al configurar Gemini: {e}")
         st.stop()
 
     # Contexto de datos en tiempo real
@@ -1698,7 +1699,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Procesamiento con modelo Gemini actualizable mediante SDK oficial
+    # Procesamiento con modelo Gemini actualizable
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -1707,20 +1708,19 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message("assistant"):
             with st.spinner("Analizando datos comerciales con Gemini IA..."):
                 response_text = ""
-                candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+                candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro"]
                 
                 success = False
                 for model_id in candidate_models:
                     try:
-                        res = ai_client.models.generate_content(
-                            model=model_id,
-                            contents=f"{system_prompt}\n\nPregunta del usuario: {prompt}"
-                        )
+                        # AQUÍ SE CORRIGIÓ EL USO DEL MODELO
+                        model = genai.GenerativeModel(model_id)
+                        res = model.generate_content(f"{system_prompt}\n\nPregunta del usuario: {prompt}")
                         if res and res.text:
                             response_text = res.text
                             success = True
                             break
-                    except Exception:
+                    except Exception as e:
                         continue
 
                 if not success or not response_text:
