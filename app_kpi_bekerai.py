@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
+import google.generativeai as genai
 
 # ==========================================
 # 1. CONFIGURACIÓN DE PÁGINA Y ESTILOS
@@ -328,6 +329,7 @@ st.markdown(FRIDOLIN_CSS, unsafe_allow_html=True)
 GOOGLE_SHEET_ID = "1YmxMIgdqn0Oe38mmUF3pFBVyWgUjyyxjmDdmWp-Oz1g"
 EXCEL_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=xlsx"
 ONLINE_SHEET_URL = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/edit"
+GID_USUARIOS = "1398578245"
 
 
 def parse_custom_number(val):
@@ -379,6 +381,19 @@ def format_kpi_value(val, medible_name):
         if val >= 100 or val % 1 == 0:
             return f"{val:,.0f}"
         return f"{val:,.2f}"
+
+
+@st.cache_data(ttl=600)
+def cargar_usuarios():
+    url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=csv&gid={GID_USUARIOS}"
+    try:
+        df_user = pd.read_csv(url)
+        df_user.columns = df_user.columns.str.strip().str.upper()
+        df_user['PIN'] = df_user['PIN'].astype(str).str.replace('.0', '', regex=False).str.strip()
+        df_user['EMAIL'] = df_user['EMAIL'].astype(str).str.strip().str.lower()
+        return df_user
+    except Exception as e:
+        return pd.DataFrame()
 
 
 @st.cache_data(ttl=60)
@@ -701,6 +716,7 @@ menu_option = st.sidebar.radio(
         "🌤️ Análisis Clima & Festivos",
         "📝 Gestión de Tareas",
         "🏆 Scorecard & Cumplimiento",
+        "🤖 Asistente IA Comercial",
     ],
 )
 
@@ -1597,3 +1613,137 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
         st.plotly_chart(
             fig_score, use_container_width=True, key="chart_scorecard"
         )
+
+# ------------------------------------------
+# MÓDULO 6: ASISTENTE IA COMERCIAL (GEMINI)
+# ------------------------------------------
+elif menu_option == "🤖 Asistente IA Comercial":
+    st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
+
+    # 1. AUTENTICACIÓN DINÁMICA DE USUARIOS POR EMAIL & PIN DESDE GOOGLE DRIVE
+    if "autenticado" not in st.session_state:
+        st.session_state.autenticado = False
+        st.session_state.usuario_actual = None
+
+    if not st.session_state.autenticado:
+        st.info("🔐 Ingresa tus credenciales autorizadas (registradas en la pestaña 'Usuarios') para acceder al Asistente IA.")
+        df_usuarios = cargar_usuarios()
+
+        with st.form("login_ia_form"):
+            user_email = st.text_input("Correo Institucional:").strip().lower()
+            user_pin = st.text_input("PIN de Acceso:", type="password").strip()
+            submit_login = st.form_submit_button("Validar Acceso")
+
+            if submit_login:
+                if df_usuarios.empty:
+                    st.error("No se pudo descargar la tabla de usuarios desde Google Sheets.")
+                else:
+                    match = df_usuarios[
+                        (df_usuarios["EMAIL"] == user_email) & 
+                        (df_usuarios["PIN"] == user_pin)
+                    ]
+                    if not match.empty:
+                        st.session_state.autenticado = True
+                        st.session_state.usuario_actual = match.iloc[0].get("NOMBRE", user_email)
+                        st.success(f"¡Bienvenido/a {st.session_state.usuario_actual}!")
+                        st.rerun()
+                    else:
+                        st.error("Correo o PIN incorrecto. Revisa los datos de la pestaña 'Usuarios'.")
+        st.stop()
+
+    # Usuario ya autenticado
+    st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
+
+    # 2. OBTENER Y CONFIGURAR API KEY DE GEMINI
+    gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+    if not gemini_key:
+        st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
+        st.stop()
+
+    genai.configure(api_key=gemini_key)
+
+    # 3. PREPARACIÓN DEL CONTEXTO DE DATOS EN TIEMPO REAL
+    kpi_summary_str = "No hay datos de KPI disponibles."
+    if not df_kpis.empty:
+        df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(100)
+        kpi_summary_str = df_kpi_sample[["Semana", "Medible", "Responsable", "Valor"]].to_string(index=False)
+
+    tasks_summary_str = "No hay datos de Tareas disponibles."
+    if not df_tasks.empty:
+        tasks_summary_str = df_tasks[["TAREA", "Responsable Principal", "Estado", "Departamento"]].to_string(index=False)
+
+    system_prompt = f"""
+    Eres el Consultor IA Comercial y Financiero Senior de la cadena de pastelerías Fridolin (Santa Cruz, Bolivia).
+    Tu objetivo es responder a las preguntas del equipo gerencial basándote estrictamente en los datos actuales de la empresa.
+
+    === RESUMEN RECIENTE DE KPIS ===
+    {kpi_summary_str}
+
+    === RESUMEN RECIENTE DE TAREAS ===
+    {tasks_summary_str}
+
+    INSTRUCCIONES DE RESPUESTA:
+    1. Responde de forma concisa, profesional y directa en español.
+    2. Utiliza viñetas o tablas cuando sea útil para mejorar la lectura.
+    3. Si la consulta involucra datos numéricos, especifica los valores o porcentajes según corresponda.
+    """
+
+    # 4. MEMORIA DE CHAT DE SESIÓN
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # 5. GENERACIÓN CON CASCADA DE FALLBACK SILENCIOSA Y FILTRADO ACTIVO DE MODELOS DE TEXTO
+    if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Analizando datos comerciales con Gemini IA..."):
+                response_text = ""
+                
+                # Modelos de texto probados en orden de prioridad
+                candidate_models = [
+                    "models/gemini-2.0-flash",
+                    "models/gemini-1.5-flash",
+                    "models/gemini-1.5-flash-8b",
+                    "gemini-1.5-flash"
+                ]
+
+                # Filtrado activo: Consultar los modelos soportados realmente por la API KEY
+                try:
+                    available_models = [
+                        m.name for m in genai.list_models()
+                        if "generateContent" in m.supported_generation_methods
+                        and not any(tag in m.name.lower() for tag in ["tts", "audio", "embed"])
+                    ]
+                    # Priorizar candidato que coincida con la lista del servidor
+                    candidate_models = [m for m in candidate_models if m in available_models] + candidate_models
+                except Exception:
+                    pass  # Si el list_models falla, se continúa con la lista fallback estándar
+
+                # Ejecutar la cascada de fallback
+                success = False
+                for model_name in candidate_models:
+                    try:
+                        model = genai.GenerativeModel(
+                            model_name=model_name,
+                            system_instruction=system_prompt
+                        )
+                        res = model.generate_content(prompt)
+                        if res and res.text:
+                            response_text = res.text
+                            success = True
+                            break
+                    except Exception as ex:
+                        continue  # Intenta el siguiente modelo silenciosamente en caso de error 400, 404 o 429
+
+                if not success or not response_text:
+                    response_text = "❌ Lo sentimos, no se pudo procesar la solicitud con Gemini en este momento. Por favor, reintenta más tarde o verifica la vigencia de tu API Key."
+
+                st.markdown(response_text)
+                st.session_state.messages.append({"role": "assistant", "content": response_text})
