@@ -1647,25 +1647,24 @@ elif menu_option == "🤖 Asistente IA Comercial":
                         st.success(f"¡Bienvenido/a {st.session_state.usuario_actual}!")
                         st.rerun()
                     else:
-                        st.error("Correo o PIN incorrecto. Revisa los datos de la pestaña 'Usuarios'.")
+                        st.error("Correo o PIN incorrecto.")
         st.stop()
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Configuración API Key de Gemini con SDK Oficial Nuevo
-    gemini_key = st.secrets.get("GEMINI_API_KEY", "")
-    if not gemini_key:
-        st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
-        st.stop()
-
+    # Intentar importar y configurar SDK
     try:
-        # Inicialización del cliente mediante el cliente oficial
+        from google import genai
+        gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+        if not gemini_key:
+            st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
+            st.stop()
         client = genai.Client(api_key=gemini_key)
-    except Exception as e:
-        st.error(f"Error al configurar Gemini Client: {e}")
+    except Exception as err_import:
+        st.error(f"⚠️ Ocurrió un problema al inicializar el servicio de Gemini IA: {err_import}")
         st.stop()
 
-    # Contexto de datos en tiempo real
+    # Contexto de datos
     kpi_summary_str = "No hay datos de KPI disponibles."
     if not df_kpis.empty:
         df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(100)
@@ -1684,14 +1683,8 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     === RESUMEN RECIENTE DE TAREAS ===
     {tasks_summary_str}
-
-    INSTRUCCIONES DE RESPUESTA:
-    1. Responde de forma concisa, profesional y directa en español.
-    2. Utiliza viñetas o tablas cuando sea útil para mejorar la lectura.
-    3. Si la consulta involucra datos numéricos, especifica los valores o porcentajes según corresponda.
     """
 
-    # Memoria de chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -1699,33 +1692,28 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Procesamiento con el cliente de la API de Gemini
     if prompt := st.chat_input("Realiza una pregunta comercial, sobre tareas o KPIs..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("Analizando datos comerciales con Gemini IA..."):
+            with st.spinner("Analizando datos comerciales..."):
                 response_text = ""
-                candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash"]
-                
-                success = False
-                for model_id in candidate_models:
+                for model_id in ["gemini-2.5-flash", "gemini-2.0-flash"]:
                     try:
                         res = client.models.generate_content(
                             model=model_id,
-                            contents=f"{system_prompt}\n\nPregunta del usuario: {prompt}"
+                            contents=f"{system_prompt}\n\nPregunta: {prompt}"
                         )
                         if res and res.text:
                             response_text = res.text
-                            success = True
                             break
                     except Exception:
                         continue
 
-                if not success or not response_text:
-                    response_text = "❌ Lo sentimos, no se pudo procesar la solicitud con Gemini en este momento. Por favor, reintenta más tarde o verifica la vigencia de tu API Key."
+                if not response_text:
+                    response_text = "❌ No se pudo obtener respuesta de la IA. Por favor, reintenta más tarde."
 
                 st.markdown(response_text)
                 st.session_state.messages.append({"role": "assistant", "content": response_text})
