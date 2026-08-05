@@ -1619,7 +1619,7 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
 
-    # Autenticación dinámica de usuarios por Email & PIN
+    # 1. AUTENTICACIÓN Y SEGURIDAD VÍA SECRETS & PIN (Regla 4)
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
         st.session_state.usuario_actual = None
@@ -1652,10 +1652,10 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     st.caption(f"👤 Sesión activa: **{st.session_state.usuario_actual}** | 🟢 Acceso Concedido")
 
-    # Intentar importar y configurar SDK
+    # 2. CARGA SEGURA DE SECRETS Y SDK (Regla 4)
     try:
         from google import genai
-        gemini_key = st.secrets.get("GEMINI_API_KEY", "")
+        gemini_key = st.secrets.get("GEMINI_API_KEY", "").strip().replace("\n", "").replace("\r", "")
         if not gemini_key:
             st.warning("⚠️ No se encontró la variable `GEMINI_API_KEY` en los Secrets de Streamlit.")
             st.stop()
@@ -1664,7 +1664,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         st.error(f"⚠️ Ocurrió un problema al inicializar el servicio de Gemini IA: {err_import}")
         st.stop()
 
-    # Contexto de datos
+    # 3. PROCESAMIENTO Y PROMPT CONTEXTUAL ESTRUCTURADO (Regla 3)
     kpi_summary_str = "No hay datos de KPI disponibles."
     if not df_kpis.empty:
         df_kpi_sample = df_kpis.dropna(subset=["Valor"]).tail(100)
@@ -1685,6 +1685,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
     {tasks_summary_str}
     """
 
+    # Interfaz del Chat
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -1700,7 +1701,16 @@ elif menu_option == "🤖 Asistente IA Comercial":
         with st.chat_message("assistant"):
             with st.spinner("Analizando datos comerciales..."):
                 response_text = ""
-                for model_id in ["gemini-2.5-flash", "gemini-2.0-flash"]:
+                error_log = []
+                
+                # 4. REINTENTO MULTI-MODELO EN CASCADA CON NOMBRES OFICIALES (Regla 1 y 2)
+                modelos_candidatos = [
+                    "models/gemini-2.0-flash",
+                    "models/gemini-1.5-flash",
+                    "models/gemini-1.5-flash-8b"
+                ]
+                
+                for model_id in modelos_candidatos:
                     try:
                         res = client.models.generate_content(
                             model=model_id,
@@ -1709,11 +1719,12 @@ elif menu_option == "🤖 Asistente IA Comercial":
                         if res and res.text:
                             response_text = res.text
                             break
-                    except Exception:
-                        continue
+                    except Exception as e:
+                        error_log.append(f"• `{model_id}`: {str(e)}")
 
-                if not response_text:
-                    response_text = "❌ No se pudo obtener respuesta de la IA. Por favor, reintenta más tarde."
-
-                st.markdown(response_text)
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
+                if response_text:
+                    st.markdown(response_text)
+                    st.session_state.messages.append({"role": "assistant", "content": response_text})
+                else:
+                    detalles = "\n".join(error_log)
+                    st.error(f"❌ No se pudo obtener respuesta de la IA.\n\n**Detalles del error por modelo:**\n{detalles}")
