@@ -1192,7 +1192,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     system_prompt = f"""
     Eres el Consultor IA Comercial y Financiero Senior de Fridolin (Santa Cruz, Bolivia).
-    Responde a las preguntas del equipo gerencial basándote estrictamente en los siguientes datos resumidos:
+    Responde a las preguntas del equipo gerencial basándote strictly en los siguientes datos resumidos:
 
     === RESUMEN KPIS RECIENTES ===
     {kpi_summary_str}
@@ -1218,10 +1218,11 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 error_log = []
                 
+                # Identificadores de modelo sin prefijo 'models/' para el SDK google-genai
                 modelos_candidatos = [
-                    "models/gemini-2.0-flash",
-                    "models/gemini-1.5-flash",
-                    "models/gemini-1.5-flash-8b"
+                    "gemini-2.5-flash",
+                    "gemini-2.0-flash",
+                    "gemini-1.5-flash"
                 ]
                 
                 for model_id in modelos_candidatos:
