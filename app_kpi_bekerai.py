@@ -1170,6 +1170,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     try:
         from google import genai
+        from google.genai import types
         client = genai.Client(api_key=gemini_key)
     except Exception as err_init:
         st.error(f"⚠️ Error al inicializar el SDK `google-genai`: {err_init}")
@@ -1215,8 +1216,8 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 error_log = []
                 
-                # Obtención dinámica de modelos activos + Fallback seguro de identificadores
-                modelos_a_probar = []
+                # Lista de modelos candidatas con prioridad
+                modelos_a_probar = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
                 try:
                     for m in client.models.list():
                         m_name = getattr(m, "name", str(m))
@@ -1225,18 +1226,19 @@ elif menu_option == "🤖 Asistente IA Comercial":
                             if clean_name not in modelos_a_probar:
                                 modelos_a_probar.append(clean_name)
                 except Exception as e_list:
-                    error_log.append(f"• Detección dinámica: {str(e_list)}")
+                    error_log.append(f"• Detección dinámica de modelos: {str(e_list)}")
 
-                # Candidatos fallback universales
-                for m_cand in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]:
-                    if m_cand not in modelos_a_probar:
-                        modelos_a_probar.append(m_cand)
-                
+                config = types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.3,
+                )
+
                 for model_id in modelos_a_probar:
                     try:
                         res = client.models.generate_content(
                             model=model_id,
-                            contents=f"{system_prompt}\n\nPregunta: {prompt}"
+                            contents=prompt,
+                            config=config,
                         )
                         if res and res.text:
                             response_text = res.text
