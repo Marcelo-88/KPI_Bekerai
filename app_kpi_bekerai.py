@@ -347,7 +347,6 @@ def load_data():
             df_vc = df_vc_raw.iloc[h_idx_vc + 1 :].copy()
             df_vc.columns = [str(c).strip() for c in df_vc_raw.iloc[h_idx_vc].values]
             df_vc = df_vc.dropna(how="all")
-            # Limpieza básica de números en Ventas_Clima
             for c in df_vc.columns:
                 if any(k in c.lower() for k in ["ventas", "temp", "min", "max", "unidad"]):
                     df_vc[c] = df_vc[c].apply(parse_custom_number)
@@ -807,7 +806,6 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     str_w1 = f"{monday_w1.strftime('%d/%m')} al {sunday_w1.strftime('%d/%m/%Y')}"
     str_w2 = f"{monday_w2.strftime('%d/%m')} al {sunday_w2.strftime('%d/%m/%Y')}"
 
-    # Visualización gráfica de la pestaña Ventas_Clima si existen datos
     if not df_vc.empty:
         st.markdown("#### 📈 Histórico Dinámico de Ventas vs Temperatura (Pestaña Ventas_Clima)")
         col_vc1, col_vc2 = st.columns([2, 1])
@@ -845,7 +843,6 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     col_left, col_right = st.columns(2)
 
     with col_left:
-        # Si df_vc contiene promedios históricos calculados dinámicamente:
         avg_temp_str = "21.8 °C"
         min_temp_str = "11.0 °C"
         max_temp_str = "32.9 °C"
@@ -1122,7 +1119,7 @@ elif menu_option == "🏆 Scorecard & Cumplimiento":
         st.plotly_chart(fig_score, use_container_width=True, key="chart_scorecard")
 
 # ------------------------------------------
-# MÓDULO 6: ASISTENTE IA COMERCIAL (GEMINI)
+# MÓDULO 6: ASISTENTE IA COMERCIAL (GEMINI GOOGLE-GENAI SDK)
 # ------------------------------------------
 elif menu_option == "🤖 Asistente IA Comercial":
     st.subheader("🤖 Asistente Consultor de Datos Fridolin (Gemini IA)")
@@ -1175,7 +1172,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
         from google import genai
         client = genai.Client(api_key=gemini_key)
     except Exception as err_init:
-        st.error(f"⚠️ Error al inicializar el SDK de Gemini: {err_init}")
+        st.error(f"⚠️ Error al inicializar el SDK `google-genai`: {err_init}")
         st.stop()
 
     kpi_summary_str = "No hay datos de KPI disponibles."
@@ -1192,7 +1189,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
 
     system_prompt = f"""
     Eres el Consultor IA Comercial y Financiero Senior de Fridolin (Santa Cruz, Bolivia).
-    Responde a las preguntas del equipo gerencial basándote strictly en los siguientes datos resumidos:
+    Responde a las preguntas del equipo gerencial basándote estrictamente en los siguientes datos resumidos:
 
     === RESUMEN KPIS RECIENTES ===
     {kpi_summary_str}
@@ -1218,14 +1215,24 @@ elif menu_option == "🤖 Asistente IA Comercial":
                 response_text = ""
                 error_log = []
                 
-                # Identificadores de modelo sin prefijo 'models/' para el SDK google-genai
-                modelos_candidatos = [
-                    "gemini-2.5-flash",
-                    "gemini-2.0-flash",
-                    "gemini-1.5-flash"
-                ]
+                # Obtención dinámica de modelos activos + Fallback seguro de identificadores
+                modelos_a_probar = []
+                try:
+                    for m in client.models.list():
+                        m_name = getattr(m, "name", str(m))
+                        clean_name = m_name.replace("models/", "")
+                        if any(k in clean_name.lower() for k in ["flash", "gemini"]):
+                            if clean_name not in modelos_a_probar:
+                                modelos_a_probar.append(clean_name)
+                except Exception as e_list:
+                    error_log.append(f"• Detección dinámica: {str(e_list)}")
+
+                # Candidatos fallback universales
+                for m_cand in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"]:
+                    if m_cand not in modelos_a_probar:
+                        modelos_a_probar.append(m_cand)
                 
-                for model_id in modelos_candidatos:
+                for model_id in modelos_a_probar:
                     try:
                         res = client.models.generate_content(
                             model=model_id,
@@ -1242,7 +1249,7 @@ elif menu_option == "🤖 Asistente IA Comercial":
                     st.session_state.messages.append({"role": "assistant", "content": response_text})
                 else:
                     detalles = "\n".join(error_log)
-                    st.error(f"❌ No se pudo obtener respuesta de la IA.\n\n**Detalles:**\n{detalles}")
+                    st.error(f"❌ No se pudo obtener respuesta de la IA.\n\n**Detalles del rastreo:**\n{detalles}")
 
 hide_streamlit_style = """
             <style>
