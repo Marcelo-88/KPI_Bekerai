@@ -339,7 +339,7 @@ def load_data():
         h_idx_vc = None
         for idx, row in df_vc_raw.iterrows():
             row_vals = [str(val).strip() for val in row.values]
-            if any(h in row_vals for h in ["Rango de la semana", "Ventas", "Temp. Promedio (°C)"]):
+            if any(h in row_vals for h in ["Rango de la semana", "Ventas", "Temp. Promedio (°C)", "Semana"]):
                 h_idx_vc = idx
                 break
         
@@ -347,6 +347,10 @@ def load_data():
             df_vc = df_vc_raw.iloc[h_idx_vc + 1 :].copy()
             df_vc.columns = [str(c).strip() for c in df_vc_raw.iloc[h_idx_vc].values]
             df_vc = df_vc.dropna(how="all")
+            # Limpieza básica de números en Ventas_Clima
+            for c in df_vc.columns:
+                if any(k in c.lower() for k in ["ventas", "temp", "min", "max", "unidad"]):
+                    df_vc[c] = df_vc[c].apply(parse_custom_number)
         else:
             df_vc = pd.DataFrame()
     else:
@@ -803,24 +807,71 @@ elif menu_option == "🌤️ Análisis Clima & Festivos":
     str_w1 = f"{monday_w1.strftime('%d/%m')} al {sunday_w1.strftime('%d/%m/%Y')}"
     str_w2 = f"{monday_w2.strftime('%d/%m')} al {sunday_w2.strftime('%d/%m/%Y')}"
 
+    # Visualización gráfica de la pestaña Ventas_Clima si existen datos
+    if not df_vc.empty:
+        st.markdown("#### 📈 Histórico Dinámico de Ventas vs Temperatura (Pestaña Ventas_Clima)")
+        col_vc1, col_vc2 = st.columns([2, 1])
+        with col_vc1:
+            col_x = [c for c in df_vc.columns if any(k in c.lower() for k in ["semana", "rango", "fecha"])][0] if any(k in c.lower() for c in df_vc.columns for k in ["semana", "rango", "fecha"]) else df_vc.columns[0]
+            col_vta = [c for c in df_vc.columns if "venta" in c.lower()][0] if any("venta" in c.lower() for c in df_vc.columns) else None
+            col_temp = [c for c in df_vc.columns if "temp" in c.lower()][0] if any("temp" in c.lower() for c in df_vc.columns) else None
+
+            if col_vta and col_temp:
+                fig_vc = make_subplots(specs=[[{"secondary_y": True}]])
+                fig_vc.add_trace(
+                    go.Bar(x=df_vc[col_x], y=df_vc[col_vta], name="Ventas (Bs)", marker_color="#7A1C29", opacity=0.85),
+                    secondary_y=False,
+                )
+                fig_vc.add_trace(
+                    go.Scatter(x=df_vc[col_x], y=df_vc[col_temp], name="Temp. Prom. (°C)", mode="lines+markers", line=dict(color="#2980B9", width=3)),
+                    secondary_y=True,
+                )
+                fig_vc.update_layout(
+                    title="<b>Relación Ventas vs Temperatura Promedio</b>",
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="#FFFFFF",
+                    height=350,
+                    margin=dict(l=40, r=40, t=40, b=40),
+                )
+                fig_vc.update_yaxes(title_text="Ventas (Bs)", secondary_y=False)
+                fig_vc.update_yaxes(title_text="Temperatura (°C)", secondary_y=True)
+                st.plotly_chart(fig_vc, use_container_width=True)
+
+        with col_vc2:
+            st.dataframe(df_vc, use_container_width=True, height=350)
+
+        st.markdown("---")
+
     col_left, col_right = st.columns(2)
 
     with col_left:
+        # Si df_vc contiene promedios históricos calculados dinámicamente:
+        avg_temp_str = "21.8 °C"
+        min_temp_str = "11.0 °C"
+        max_temp_str = "32.9 °C"
+
+        if not df_vc.empty and any("temp" in c.lower() for c in df_vc.columns):
+            temp_col = [c for c in df_vc.columns if "temp" in c.lower()][0]
+            if df_vc[temp_col].notna().any():
+                avg_temp_str = f"{df_vc[temp_col].mean():.1f} °C"
+                min_temp_str = f"{df_vc[temp_col].min():.1f} °C"
+                max_temp_str = f"{df_vc[temp_col].max():.1f} °C"
+
         weather_card_html = textwrap.dedent(f"""
         <div class="sub-card">
             <div class="sub-card-title">🌡️ Métricas de Clima Semanal (Santa Cruz)</div>
             <div class="weather-grid">
                 <div class="weather-item">
                     <div class="weather-lbl">🌡️ TEMP. PROMEDIO</div>
-                    <div class="weather-val">21.8 °C</div>
+                    <div class="weather-val">{avg_temp_str}</div>
                 </div>
                 <div class="weather-item">
                     <div class="weather-lbl">❄️ MÍNIMA HISTÓRICA</div>
-                    <div class="weather-val">11.0 °C</div>
+                    <div class="weather-val">{min_temp_str}</div>
                 </div>
                 <div class="weather-item">
                     <div class="weather-lbl">🔥 MÁXIMA ALCANZADA</div>
-                    <div class="weather-val">32.9 °C</div>
+                    <div class="weather-val">{max_temp_str}</div>
                 </div>
                 <div class="weather-item">
                     <div class="weather-lbl">☁️ CLIMA PREDOMINANTE</div>
